@@ -68,6 +68,8 @@ class _CargaState extends State<Carga> {
       TextEditingController(); // Input para precio por litro
   final TextEditingController _personaQueCargaController =
       TextEditingController(); // 🆕 Input para persona que realiza la carga
+  final TextEditingController _kilometrajeController =
+      TextEditingController(); // 🆕 Input para kilometraje del vehículo
 
   // Gestor de imágenes para capturar tickets
   final ImagePicker _imagePicker = ImagePicker(); // Selector de imágenes
@@ -728,6 +730,23 @@ class _CargaState extends State<Carga> {
                         },
                       ),
                       const SizedBox(height: 20),
+                      TextField(
+                        controller: _kilometrajeController,
+                        decoration: InputDecoration(
+                          labelText: 'Kilometraje del vehículo',
+                          hintText: 'Ingrese el kilometraje actual',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(
+                            Icons.speed,
+                            color: Color(0xFF0A2E5C),
+                          ),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 20),
                       InputDecorator(
                         decoration: const InputDecoration(
                           labelText: 'Precio por litro',
@@ -1322,6 +1341,9 @@ class _CargaState extends State<Carga> {
           '🔍 DEBUG: nombre_conductor: ${_personaQueCargaController.text.trim()}',
         ); // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - ESTE ES EL CAMPO CLAVE
         print(
+          '🔍 DEBUG: odometro: ${_kilometrajeController.text.trim()}',
+        ); // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
+        print(
           '🔍 DEBUG: widget.datosVehiculo: ${widget.datosVehiculo}',
         ); // Datos completos del vehículo
         print(
@@ -1329,9 +1351,9 @@ class _CargaState extends State<Carga> {
         ); // Todas las cargas del vehículo
 
         // ========================================================================
-        // 🛡️ VALIDACIÓN: Verificar que el campo nombre_conductor no esté vacío
+        // 🛡️ VALIDACIÓN: Verificar que los campos requeridos no estén vacíos
         // ========================================================================
-        // Esta validación es CRÍTICA - no permite enviar el POST si el campo está vacío
+        // Esta validación es CRÍTICA - no permite enviar el POST si los campos están vacíos
         if (_personaQueCargaController.text.trim().isEmpty) {
           // Si el campo está vacío, mostramos un error y DETENEMOS la ejecución
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1339,6 +1361,18 @@ class _CargaState extends State<Carga> {
               content: Text(
                 '❌ Debe ingresar el nombre de la persona que realiza la carga',
               ),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return; // ← DETIENE LA EJECUCIÓN - NO SE HACE EL POST
+        }
+
+        if (_kilometrajeController.text.trim().isEmpty) {
+          // Si el kilometraje está vacío, mostramos un error y DETENEMOS la ejecución
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Debe ingresar el kilometraje del vehículo'),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 3),
             ),
@@ -1360,6 +1394,8 @@ class _CargaState extends State<Carga> {
           imagenTicket: _imagenBase64, // Imagen del ticket en formato base64
           nombre_conductor: _personaQueCargaController.text
               .trim(), // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
+          odometro: _kilometrajeController.text
+              .trim(), // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
         );
 
         if (result['success']) {

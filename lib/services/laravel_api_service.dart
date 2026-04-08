@@ -640,6 +640,7 @@ class LaravelApiService {
     required String imagenTicket, // 🆕 Imagen del ticket en base64
     required String
     nombre_conductor, // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
+    required String odometro, // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
   }) async {
     // ========================================================================
     // 🔐 VERIFICACIÓN: Asegurarnos que tenemos token y usuario
@@ -676,6 +677,7 @@ class LaravelApiService {
       print(
         'Nombre Conductor: $nombre_conductor',
       ); // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
+      print('Odometro: $odometro'); // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
       print(
         'Imagen Ticket length: ${imagenTicket.length} caracteres',
       ); // Tamaño de la imagen
@@ -736,6 +738,7 @@ class LaravelApiService {
             idCargaAsignada, // ID de la asignación previa (según tipo)
         'nombre_conductor':
             nombre_conductor, // NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
+        'odometro_actual': odometro, // KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
       });
 
       // DEBUG FINAL: Mostrar todos los campos que se enviarán en el POST
@@ -775,6 +778,9 @@ class LaravelApiService {
       print(
         '🔍 nombre_conductor: $nombre_conductor',
       ); // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
+      print(
+        '🔍 odometro_actual: $odometro',
+      ); // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
 
       // 🔍 DEBUG: Verificar el request completo antes de enviar
       print('🔍 DEBUG: Request URL: ${request.url}');
