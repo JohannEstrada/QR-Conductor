@@ -1341,8 +1341,8 @@ class _CargaState extends State<Carga> {
           '🔍 DEBUG: nombre_conductor: ${_personaQueCargaController.text.trim()}',
         ); // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - ESTE ES EL CAMPO CLAVE
         print(
-          '🔍 DEBUG: odometro: ${_kilometrajeController.text.trim()}',
-        ); // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
+          'DEBUG: odometro: ${(_tipoCarga == 'bidones' || _tipoCarga == 'BIDON') ? '0' : _kilometrajeController.text.trim()}',
+        ); // KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO (0 para BIDONES)
         print(
           '🔍 DEBUG: widget.datosVehiculo: ${widget.datosVehiculo}',
         ); // Datos completos del vehículo
@@ -1384,6 +1384,11 @@ class _CargaState extends State<Carga> {
         // 🚀 LLAMADA A LA API: Enviar todos los datos al servidor Laravel
         // ========================================================================
         // Aquí es donde se envía el POST con todos los datos incluyendo nombre_conductor
+
+        // DEBUG: Verificar valor exacto de _tipoCarga
+        print('DEBUG: _tipoCarga = "$_tipoCarga"');
+        print('DEBUG: ¿_tipoCarga == "bidones"? ${_tipoCarga == 'bidones'}');
+        print('DEBUG: ¿_tipoCarga == "BIDON"? ${_tipoCarga == 'BIDON'}');
         final result = await LaravelApiService.insertarCargaCompletada(
           idVehiculo: idVehiculo, // ID del vehículo en la base de datos
           litrosCargados: litrosCargados, // Cantidad de litros cargados
@@ -1394,8 +1399,10 @@ class _CargaState extends State<Carga> {
           imagenTicket: _imagenBase64, // Imagen del ticket en formato base64
           nombre_conductor: _personaQueCargaController.text
               .trim(), // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
-          odometro: _kilometrajeController.text
-              .trim(), // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
+          odometro: (_tipoCarga == 'bidones' || _tipoCarga == 'BIDON')
+              ? '0'
+              : _kilometrajeController.text
+                    .trim(), // KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO (0 para BIDONES)
         );
 
         if (result['success']) {

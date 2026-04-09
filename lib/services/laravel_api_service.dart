@@ -718,9 +718,8 @@ class LaravelApiService {
       print('   Enviando num_serie completo desde Flutter: $numSerie');
       print('');
 
-      // 🆕 LÓGICA PARA ODOMETRO: Enviar string vacío para cargas de bidones
-      // Las cargas de bidones no van directamente al vehículo, por lo que el kilometraje no es relevante
-      final odometroParaEnviar = (tipoCarga == 'BIDON') ? '' : odometro;
+      // 🆕 LÓGICA PARA ODOMETRO: Enviar '0' para cargas de bidones como solicitó el usuario
+      final odometroParaEnviar = (tipoCarga == 'BIDON') ? '0' : odometro;
 
       request.fields.addAll({
         'id_vehiculo': idVehiculo, // 🚗 ID del vehículo en la BD
