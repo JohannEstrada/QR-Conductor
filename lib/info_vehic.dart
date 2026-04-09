@@ -996,7 +996,7 @@ class _InfoVehicState extends State<InfoVehic> {
                         Icons.person,
                         color: Color(0xFF0A2E5C),
                       ),
-                      title: const Text('Conductor:'),
+                      title: const Text('Conductor asignado al vehículo:'),
                       subtitle: Text(
                         _formatearDato(widget.datosVehiculo?['conductor']),
                         style: const TextStyle(
