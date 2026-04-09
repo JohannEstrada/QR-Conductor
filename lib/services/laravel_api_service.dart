@@ -718,6 +718,10 @@ class LaravelApiService {
       print('   Enviando num_serie completo desde Flutter: $numSerie');
       print('');
 
+      // 🆕 LÓGICA PARA ODOMETRO: Enviar string vacío para cargas de bidones
+      // Las cargas de bidones no van directamente al vehículo, por lo que el kilometraje no es relevante
+      final odometroParaEnviar = (tipoCarga == 'BIDON') ? '' : odometro;
+
       request.fields.addAll({
         'id_vehiculo': idVehiculo, // 🚗 ID del vehículo en la BD
         'litros_cargados': litrosCargados, // ⛽ Cantidad de combustible cargado
@@ -738,7 +742,8 @@ class LaravelApiService {
             idCargaAsignada, // ID de la asignación previa (según tipo)
         'nombre_conductor':
             nombre_conductor, // NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
-        'odometro_actual': odometro, // KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
+        'odometro_actual':
+            odometroParaEnviar, // 🆕 KILOMETRAJE: null para bidones, valor para otros tipos
       });
 
       // DEBUG FINAL: Mostrar todos los campos que se enviarán en el POST
@@ -779,8 +784,8 @@ class LaravelApiService {
         '🔍 nombre_conductor: $nombre_conductor',
       ); // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
       print(
-        '🔍 odometro_actual: $odometro',
-      ); // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
+        '🔍 odometro_actual: $odometroParaEnviar',
+      ); // 🆕 KILOMETRAJE: null para bidones, valor para otros tipos
 
       // 🔍 DEBUG: Verificar el request completo antes de enviar
       print('🔍 DEBUG: Request URL: ${request.url}');
