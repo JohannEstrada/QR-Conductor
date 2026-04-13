@@ -13,6 +13,7 @@ dependencies:
   permission_handler: ^11.0.1
   image_picker: ^1.0.7
   http: ^1.2.0
+  mobile_scanner: ^5.1.0
 
 dev_dependencies:
   flutter_test:

@@ -4,6 +4,8 @@ import 'busq_vehic.dart';
 import 'info_vehic.dart';
 import 'login_page.dart';
 import 'services/laravel_api_service.dart';
+import 'validar_conductor.dart';
+import 'services/conductor_service.dart';
 
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
@@ -37,6 +39,63 @@ class _PagInicioState extends State<PagInicio> {
           duration: const Duration(seconds: 3),
         ),
       );
+    }
+  }
+
+  // =============================================================================
+  // MÉTODO DE VALIDACIÓN DE CONDUCTOR - Verifica conductor antes de cargar
+  // =============================================================================
+  Future<bool> _validarConductor({String tipoCarga = 'ordinaria'}) async {
+    // Si ya hay un conductor validado, verificar estado
+    if (ConductorService.hayConductorValidado) {
+      // Verificar si necesita revalidación por tiempo
+      if (ConductorService.necesitaRevalidacion()) {
+        ConductorService.limpiarConductor();
+        _mostrarMensaje(
+          'Validación expirada, por favor valide nuevamente',
+          color: Colors.orange,
+        );
+        // Continuar con validación nueva
+      } else if (ConductorService.puedeRealizarCarga(tipoCarga)) {
+        _mostrarMensaje(
+          'Conductor ya validado: ${ConductorService.nombreConductor}',
+          color: Colors.green,
+        );
+        return true;
+      } else {
+        _mostrarMensaje(ConductorService.mensajeEstado, color: Colors.red);
+        return false;
+      }
+    }
+
+    // Abrir pantalla de validación
+    final resultado = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ValidarConductorScreen()),
+    );
+
+    // Procesar resultado de la validación
+    if (resultado != null && resultado['success'] == true) {
+      // Guardar datos del conductor en el servicio global
+      ConductorService.guardarConductor(
+        conductor: resultado['conductor'],
+        estado: resultado['estado'],
+        id: resultado['conductor']['id']?.toString() ?? 'desconocido',
+      );
+
+      _mostrarMensaje(
+        'Conductor validado: ${ConductorService.nombreConductor}',
+        color: Colors.green,
+      );
+
+      return true;
+    } else {
+      // La validación falló o fue cancelada
+      _mostrarMensaje(
+        'Conductor no validado. No puede continuar con la carga.',
+        color: Colors.red,
+      );
+      return false;
     }
   }
 
@@ -298,6 +357,9 @@ class _PagInicioState extends State<PagInicio> {
             onPressed: () {
               Navigator.of(context).pop(); // Cierra el diálogo de confirmación
 
+              // Limpiar datos del conductor al cerrar sesión
+              ConductorService.limpiarConductor();
+
               // Navega a la página de login y limpia todo el historial
               Navigator.pushAndRemoveUntil(
                 context,
@@ -384,9 +446,18 @@ class _PagInicioState extends State<PagInicio> {
                         const SizedBox(height: 20), // Espacio vertical
 
                         ElevatedButton.icon(
-                          onPressed: () => _showInputDialog(
-                            context,
-                          ), // Abre diálogo para ingresar número de serie
+                          onPressed: () async {
+                            // 1. Primero validar conductor para carga ordinaria
+                            final conductorValido = await _validarConductor(
+                              tipoCarga: 'ordinaria',
+                            );
+
+                            if (conductorValido) {
+                              // 2. Si es válido, continuar con búsqueda de vehículo
+                              _showInputDialog(context);
+                            }
+                            // Si no es válido, el método _validarConductor ya mostró el error
+                          },
                           icon: const Icon(Icons.search), // Ícono de búsqueda
                           label: const Text(
                             'Carga Ordinaria',
@@ -411,10 +482,21 @@ class _PagInicioState extends State<PagInicio> {
                         const SizedBox(height: 12), // Espacio entre botones
                         // Botón 2: Carga Extraordinaria (temporalmente deshabilitado)
                         ElevatedButton.icon(
-                          onPressed: () => _showInputDialog(
-                            context,
-                            tipoCarga: 'extraordinaria',
-                          ), // Abre diálogo para ingresar número de serie
+                          onPressed: () async {
+                            // 1. Primero validar conductor para carga extraordinaria
+                            final conductorValido = await _validarConductor(
+                              tipoCarga: 'extraordinaria',
+                            );
+
+                            if (conductorValido) {
+                              // 2. Si es válido, continuar con búsqueda de vehículo
+                              _showInputDialog(
+                                context,
+                                tipoCarga: 'extraordinaria',
+                              );
+                            }
+                            // Si no es válido, el método _validarConductor ya mostró el error
+                          },
                           icon: const Icon(Icons.star), // Ícono de estrella
                           label: const Text(
                             'Carga Extraordinaria',
@@ -439,10 +521,18 @@ class _PagInicioState extends State<PagInicio> {
                         const SizedBox(height: 12), // Espacio entre botones
                         // Botón 3: Carga de Bidones (temporalmente deshabilitado)
                         ElevatedButton.icon(
-                          onPressed: () => _showInputDialog(
-                            context,
-                            tipoCarga: 'bidones',
-                          ), // Usa el MISMO cuadro pero con lógica diferente
+                          onPressed: () async {
+                            // 1. Primero validar conductor para carga de bidones
+                            final conductorValido = await _validarConductor(
+                              tipoCarga: 'bidones',
+                            );
+
+                            if (conductorValido) {
+                              // 2. Si es válido, continuar con búsqueda de vehículo
+                              _showInputDialog(context, tipoCarga: 'bidones');
+                            }
+                            // Si no es válido, el método _validarConductor ya mostró el error
+                          },
                           icon: const Icon(
                             Icons.inventory_2,
                           ), // Ícono de bidones
