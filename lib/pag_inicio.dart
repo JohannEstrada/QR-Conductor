@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'busq_vehic.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'info_vehic.dart';
 import 'login_page.dart';
 import 'services/laravel_api_service.dart';
-import 'validar_conductor.dart';
 import 'services/conductor_service.dart';
 
 class UpperCaseTextFormatter extends TextInputFormatter {
@@ -28,6 +27,11 @@ class PagInicio extends StatefulWidget {
 }
 
 class _PagInicioState extends State<PagInicio> {
+  // Variables de estado para validación de credencial
+  bool _credencialValidada = false;
+  String? _nombreConductorValidado;
+  String? _vigenciaCredencial;
+
   // Método para mostrar mensajes emergentes en la pantalla
   void _mostrarMensaje(String mensaje, {Color color = Colors.red}) {
     if (mounted) {
@@ -43,56 +47,177 @@ class _PagInicioState extends State<PagInicio> {
   }
 
   // =============================================================================
-  // MÉTODO DE VALIDACIÓN DE CONDUCTOR - Verifica conductor antes de cargar
+  // MÉTODO PARA ESCANEAR QR Y VALIDAR CREDENCIAL DIRECTAMENTE
   // =============================================================================
-  Future<bool> _validarConductor({String tipoCarga = 'ordinaria'}) async {
-    // Si ya hay un conductor validado, verificar estado
-    if (ConductorService.hayConductorValidado) {
-      // Verificar si necesita revalidación por tiempo
-      if (ConductorService.necesitaRevalidacion()) {
-        ConductorService.limpiarConductor();
-        _mostrarMensaje(
-          'Validación expirada, por favor valide nuevamente',
-          color: Colors.orange,
-        );
-        // Continuar con validación nueva
-      } else if (ConductorService.puedeRealizarCarga(tipoCarga)) {
-        _mostrarMensaje(
-          'Conductor ya validado: ${ConductorService.nombreConductor}',
-          color: Colors.green,
-        );
-        return true;
-      } else {
-        _mostrarMensaje(ConductorService.mensajeEstado, color: Colors.red);
-        return false;
+  Future<void> _escanearQRValidarCredencial() async {
+    final controller = MobileScannerController();
+
+    // Mostrar diálogo con cámara directamente
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Column(
+            children: [
+              AppBar(
+                title: const Text('Escanear Credencial'),
+                backgroundColor: const Color(0xFF0A2E5C),
+                foregroundColor: Colors.white,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      controller.stop();
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+              Expanded(
+                child: MobileScanner(
+                  controller: controller,
+                  onDetect: (capture) {
+                    final List<Barcode> barcodes = capture.barcodes;
+                    if (barcodes.isNotEmpty &&
+                        barcodes.first.rawValue != null) {
+                      final String rawValue = barcodes.first.rawValue!.trim();
+
+                      // Detener escáner
+                      controller.stop();
+                      Navigator.of(context).pop();
+
+                      // Validar QR localmente
+                      _validarQRDirectamente(rawValue);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =============================================================================
+  // MÉTODO PARA VALIDAR QR DIRECTAMENTE (LÓGICA LOCAL)
+  // =============================================================================
+  void _validarQRDirectamente(String qrCompleto) {
+    // Extraer vigencia del QR
+    String? vigenciaExtraida;
+    if (qrCompleto.contains('VIGENCIA:')) {
+      final RegExp vigenciaRegex = RegExp(r'VIGENCIA:([^|]+)');
+      final Match? match = vigenciaRegex.firstMatch(qrCompleto);
+      if (match != null) {
+        vigenciaExtraida = match.group(1)?.trim();
       }
     }
 
-    // Abrir pantalla de validación
-    final resultado = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ValidarConductorScreen()),
-    );
+    // Extraer nombre del QR
+    String? nombreExtraido;
+    if (qrCompleto.contains('NOMBRE:')) {
+      final RegExp nombreRegex = RegExp(r'NOMBRE:([^|]+)');
+      final Match? match = nombreRegex.firstMatch(qrCompleto);
+      if (match != null) {
+        nombreExtraido = match.group(1)?.trim();
+      }
+    }
 
-    // Procesar resultado de la validación
-    if (resultado != null && resultado['success'] == true) {
-      // Guardar datos del conductor en el servicio global
-      ConductorService.guardarConductor(
-        conductor: resultado['conductor'],
-        estado: resultado['estado'],
-        id: resultado['conductor']['id']?.toString() ?? 'desconocido',
+    // Validar vigencia
+    if (vigenciaExtraida == null || vigenciaExtraida.isEmpty) {
+      _mostrarMensaje(
+        'La credencial no contiene información de vigencia',
+        color: Colors.red,
       );
+      setState(() {
+        _credencialValidada = false;
+        _nombreConductorValidado = null;
+        _vigenciaCredencial = null;
+      });
+      return;
+    }
+
+    // Parsear vigencia
+    final RegExp mesAnoRegex = RegExp(r'([A-Z]+)\s+(\d{4})');
+    final Match? match = mesAnoRegex.firstMatch(vigenciaExtraida.toUpperCase());
+
+    if (match == null) {
+      _mostrarMensaje('Formato de vigencia no reconocido', color: Colors.red);
+      setState(() {
+        _credencialValidada = false;
+        _nombreConductorValidado = null;
+        _vigenciaCredencial = null;
+      });
+      return;
+    }
+
+    final String mes = match.group(1)!;
+    final int ano = int.parse(match.group(2)!);
+
+    final Map<String, int> meses = {
+      'ENERO': 1,
+      'FEBRERO': 2,
+      'MARZO': 3,
+      'ABRIL': 4,
+      'MAYO': 5,
+      'JUNIO': 6,
+      'JULIO': 7,
+      'AGOSTO': 8,
+      'SEPTIEMBRE': 9,
+      'OCTUBRE': 10,
+      'NOVIEMBRE': 11,
+      'DICIEMBRE': 12,
+    };
+
+    final int mesNumero = meses[mes] ?? 1;
+    final DateTime fechaVigencia = DateTime(ano, mesNumero + 1, 0);
+    final DateTime fechaActual = DateTime.now();
+
+    // Verificar si está vencida
+    if (fechaActual.isAfter(fechaVigencia)) {
+      // CREDENCIAL VENCIDA
+      setState(() {
+        _credencialValidada = false;
+        _nombreConductorValidado = null;
+        _vigenciaCredencial = null;
+      });
 
       _mostrarMensaje(
-        'Conductor validado: ${ConductorService.nombreConductor}',
+        'CREDENCIAL VENCIDA\nVigencia: $vigenciaExtraida\nNo puede realizar la carga',
+        color: Colors.red,
+      );
+    } else {
+      // CREDENCIAL VIGENTE
+      setState(() {
+        _credencialValidada = true;
+        _nombreConductorValidado = nombreExtraido;
+        _vigenciaCredencial = vigenciaExtraida;
+      });
+
+      _mostrarMensaje(
+        'CREDENCIAL VIGENTE\nConductor: $nombreExtraido\nVigencia: $vigenciaExtraida',
         color: Colors.green,
       );
+    }
+  }
 
+  // =============================================================================
+  // MÉTODO DE VALIDACIÓN DE CONDUCTOR - Verifica conductor antes de cargar
+  // =============================================================================
+  Future<bool> _validarConductor({String tipoCarga = 'ordinaria'}) async {
+    // Verificar si la credencial ya está validada localmente
+    if (_credencialValidada && _nombreConductorValidado != null) {
+      _mostrarMensaje(
+        'Conductor ya validado: $_nombreConductorValidado',
+        color: Colors.green,
+      );
       return true;
     } else {
-      // La validación falló o fue cancelada
       _mostrarMensaje(
-        'Conductor no validado. No puede continuar con la carga.',
+        'Debe validar la credencial primero escaneando el QR',
         color: Colors.red,
       );
       return false;
@@ -360,6 +485,13 @@ class _PagInicioState extends State<PagInicio> {
               // Limpiar datos del conductor al cerrar sesión
               ConductorService.limpiarConductor();
 
+              // Limpiar estado de validación local
+              setState(() {
+                _credencialValidada = false;
+                _nombreConductorValidado = null;
+                _vigenciaCredencial = null;
+              });
+
               // Navega a la página de login y limpia todo el historial
               Navigator.pushAndRemoveUntil(
                 context,
@@ -444,95 +576,159 @@ class _PagInicioState extends State<PagInicio> {
                           ), // Texto más pequeño y gris
                         ),
                         const SizedBox(height: 20), // Espacio vertical
-
+                        // Botón de validación de credencial (QR)
                         ElevatedButton.icon(
-                          onPressed: () async {
-                            // 1. Primero validar conductor para carga ordinaria
-                            final conductorValido = await _validarConductor(
-                              tipoCarga: 'ordinaria',
-                            );
+                          onPressed: _escanearQRValidarCredencial,
+                          icon: const Icon(
+                            Icons.qr_code_scanner,
+                          ), // Ícono de QR
+                          label: Text(
+                            _credencialValidada
+                                ? 'Credencial Validada: $_nombreConductorValidado'
+                                : 'Escanear QR para Validar Credencial',
+                          ), // Texto dinámico
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _credencialValidada
+                                ? Colors.green
+                                : const Color(
+                                    0xFF135DD8,
+                                  ), // Azul para no validado
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 20), // Espacio vertical
+                        // Información de estado
+                        if (_credencialValidada) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              border: Border.all(color: Colors.green.shade200),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Conductor: $_nombreConductorValidado\nVigencia: $_vigenciaCredencial',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
 
-                            if (conductorValido) {
-                              // 2. Si es válido, continuar con búsqueda de vehículo
-                              _showInputDialog(context);
-                            }
-                            // Si no es válido, el método _validarConductor ya mostró el error
-                          },
+                        // Botón 1: Carga Ordinaria (deshabilitado hasta validar QR)
+                        ElevatedButton.icon(
+                          onPressed: _credencialValidada
+                              ? () async {
+                                  // 1. Primero validar conductor para carga ordinaria
+                                  final conductorValido =
+                                      await _validarConductor(
+                                        tipoCarga: 'ordinaria',
+                                      );
+
+                                  if (conductorValido) {
+                                    // 2. Si es válido, continuar con búsqueda de vehículo
+                                    _showInputDialog(
+                                      context,
+                                      nombreConductor: _nombreConductorValidado,
+                                    );
+                                  }
+                                  // Si no es válido, el método _validarConductor ya mostró el error
+                                }
+                              : null, // Deshabilitado si no hay credencial validada
                           icon: const Icon(Icons.search), // Ícono de búsqueda
                           label: const Text(
                             'Carga Ordinaria',
                           ), // Texto del botón
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF0A2E5C,
-                            ), // Azul marino más oscuro
-                            foregroundColor:
-                                Colors.white, // Texto e ícono en blanco
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 15,
-                            ), // Padding vertical
+                            backgroundColor: _credencialValidada
+                                ? const Color(0xFF0A2E5C)
+                                : Colors.grey, // Gris si está deshabilitado
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                10,
-                              ), // Bordes redondeados de 10px
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            elevation: 3, // Sombra suave
+                            elevation: _credencialValidada ? 3 : 0,
                           ),
                         ),
                         const SizedBox(height: 12), // Espacio entre botones
-                        // Botón 2: Carga Extraordinaria (temporalmente deshabilitado)
+                        // Botón 2: Carga Extraordinaria (deshabilitado hasta validar QR)
                         ElevatedButton.icon(
-                          onPressed: () async {
-                            // 1. Primero validar conductor para carga extraordinaria
-                            final conductorValido = await _validarConductor(
-                              tipoCarga: 'extraordinaria',
-                            );
+                          onPressed: _credencialValidada
+                              ? () async {
+                                  // 1. Primero validar conductor para carga extraordinaria
+                                  final conductorValido =
+                                      await _validarConductor(
+                                        tipoCarga: 'extraordinaria',
+                                      );
 
-                            if (conductorValido) {
-                              // 2. Si es válido, continuar con búsqueda de vehículo
-                              _showInputDialog(
-                                context,
-                                tipoCarga: 'extraordinaria',
-                              );
-                            }
-                            // Si no es válido, el método _validarConductor ya mostró el error
-                          },
+                                  if (conductorValido) {
+                                    // 2. Si es válido, continuar con búsqueda de vehículo
+                                    _showInputDialog(
+                                      context,
+                                      tipoCarga: 'extraordinaria',
+                                    );
+                                  }
+                                  // Si no es válido, el método _validarConductor ya mostró el error
+                                }
+                              : null, // Deshabilitado si no hay credencial validada
                           icon: const Icon(Icons.star), // Ícono de estrella
                           label: const Text(
                             'Carga Extraordinaria',
                           ), // Texto del botón
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF0A2E5C,
-                            ), // Azul marino
-                            foregroundColor:
-                                Colors.white, // Texto e ícono en blanco
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 15,
-                            ), // Padding vertical
+                            backgroundColor: _credencialValidada
+                                ? const Color(0xFF0A2E5C)
+                                : Colors.grey, // Gris si está deshabilitado
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                10,
-                              ), // Bordes redondeados
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            elevation: 3, // Sombra suave
+                            elevation: _credencialValidada ? 3 : 0,
                           ),
                         ),
                         const SizedBox(height: 12), // Espacio entre botones
-                        // Botón 3: Carga de Bidones (temporalmente deshabilitado)
+                        // Botón 3: Carga de Bidones (deshabilitado hasta validar QR)
                         ElevatedButton.icon(
-                          onPressed: () async {
-                            // 1. Primero validar conductor para carga de bidones
-                            final conductorValido = await _validarConductor(
-                              tipoCarga: 'bidones',
-                            );
+                          onPressed: _credencialValidada
+                              ? () async {
+                                  // 1. Primero validar conductor para carga de bidones
+                                  final conductorValido =
+                                      await _validarConductor(
+                                        tipoCarga: 'bidones',
+                                      );
 
-                            if (conductorValido) {
-                              // 2. Si es válido, continuar con búsqueda de vehículo
-                              _showInputDialog(context, tipoCarga: 'bidones');
-                            }
-                            // Si no es válido, el método _validarConductor ya mostró el error
-                          },
+                                  if (conductorValido) {
+                                    // 2. Si es válido, continuar con búsqueda de vehículo
+                                    _showInputDialog(
+                                      context,
+                                      tipoCarga: 'bidones',
+                                    );
+                                  }
+                                  // Si no es válido, el método _validarConductor ya mostró el error
+                                }
+                              : null, // Deshabilitado si no hay credencial validada
                           icon: const Icon(
                             Icons.inventory_2,
                           ), // Ícono de bidones
@@ -540,20 +736,15 @@ class _PagInicioState extends State<PagInicio> {
                             'Carga de Bidones',
                           ), // Texto del botón
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF0A2E5C,
-                            ), // Azul marino como los otros
-                            foregroundColor:
-                                Colors.white, // Texto e ícono en blanco
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 15,
-                            ), // Padding vertical igual que los otros
+                            backgroundColor: _credencialValidada
+                                ? const Color(0xFF0A2E5C)
+                                : Colors.grey, // Gris si está deshabilitado
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                10,
-                              ), // Bordes redondeados de 10px como los otros
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            elevation: 3, // Sombra suave igual que los otros
+                            elevation: _credencialValidada ? 3 : 0,
                           ),
                         ),
                       ],
@@ -738,6 +929,7 @@ class _PagInicioState extends State<PagInicio> {
   Future<void> _showInputDialog(
     BuildContext context, {
     String tipoCarga = 'ordinaria',
+    String? nombreConductor,
   }) async {
     // Crea controlador para el campo de texto del diálogo
     final TextEditingController controller = TextEditingController();
@@ -958,7 +1150,9 @@ class _PagInicioState extends State<PagInicio> {
                                     dynamic
                                   >?, // TODAS las cargas del vehículo
                           tipoCargaPreseleccionado:
-                              tipoCarga, // 🆕 Pasar tipo de carga
+                              tipoCarga, // Pasar tipo de carga
+                          nombreConductorValidado:
+                              nombreConductor, // Pasar nombre del conductor validado
                         ),
                       ),
                     );

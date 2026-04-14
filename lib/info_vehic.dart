@@ -16,29 +16,28 @@ import 'carga.dart'; // 🆕 Importar Carga para navegación
 // Características: Validación de días, tipos de carga, navegación segura
 // =============================================================================
 class InfoVehic extends StatefulWidget {
-  // Número de serie del vehículo (identificador único)
-  final String numeroSerie;
+  // Parámetros recibidos desde PagInicio
+  final String numeroSerie; // Número de serie del vehículo
+  final Map<String, dynamic>? datosVehiculo; // Datos completos del vehículo
+  final List<dynamic>? cargasDelVehiculo; // Lista de cargas asignadas
+  final String? tipoCombustible; // Tipo de combustible (MAGNA/PREMIUM)
+  final String?
+  tipoCargaPreseleccionado; // Tipo de carga (ordinaria/extraordinaria/bidones)
+  final String? idCargaAsignada; // ID específico de carga asignada
+  final String?
+  idVehiculoCorrecto; // ID correcto del vehículo (para cargas especiales)
+  final String? nombreConductorValidado; // Nombre del conductor validado por QR
 
-  // Datos completos del vehículo (información de la API)
-  final Map<String, dynamic>? datosVehiculo;
-
-  // Lista de cargas asignadas al vehículo
-  final List<dynamic>? cargasDelVehiculo;
-
-  // ID de la carga asignada (para cargas extraordinarias)
-  final String? idCargaAsignada;
-
-  // 🆕 Tipo de carga preseleccionado (ordinaria/extraordinaria/bidones)
-  final String? tipoCargaPreseleccionado;
-
-  // Constructor de la clase con parámetros opcionales
   const InfoVehic({
     super.key,
-    this.numeroSerie = '', // Valor por defecto: vacío
-    this.datosVehiculo, // Opcional: datos del vehículo
-    this.cargasDelVehiculo, // Opcional: lista de cargas
-    this.idCargaAsignada, // Opcional: ID de carga asignada
-    this.tipoCargaPreseleccionado, // 🆕 Tipo de carga preseleccionado
+    required this.numeroSerie,
+    this.datosVehiculo,
+    this.cargasDelVehiculo,
+    this.tipoCombustible,
+    this.tipoCargaPreseleccionado,
+    this.idCargaAsignada, // ID de carga asignada
+    this.idVehiculoCorrecto, // ID correcto del vehículo
+    this.nombreConductorValidado, // Nombre del conductor validado
   });
 
   // Crear estado mutable para el widget
@@ -846,11 +845,13 @@ class _InfoVehicState extends State<InfoVehic> {
           numeroSerie:
               widget.datosVehiculo?['num_serie'] ??
               widget.numeroSerie, // Usar número completo del vehículo
-          // 🆕 Para bidones usar 'combustible', para otros usar 'tipo_combustible'
+          // Para bidones usar 'combustible', para otros usar 'tipo_combustible'
           tipoCombustible:
               widget.datosVehiculo?['combustible'] ??
               widget.datosVehiculo?['tipo_combustible'],
           tipoCargaPreseleccionado: widget.tipoCargaPreseleccionado,
+          nombreConductorValidado: widget
+              .nombreConductorValidado, // Pasar nombre del conductor validado
         ),
       ),
     );

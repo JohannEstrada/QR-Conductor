@@ -40,6 +40,7 @@ class Carga extends StatefulWidget {
   final String? idCargaAsignada; // ID específico de carga asignada
   final String?
   idVehiculoCorrecto; // ID correcto del vehículo (para cargas especiales)
+  final String? nombreConductorValidado; // Nombre del conductor validado por QR
 
   const Carga({
     super.key,
@@ -49,7 +50,8 @@ class Carga extends StatefulWidget {
     this.tipoCombustible,
     this.tipoCargaPreseleccionado,
     this.idCargaAsignada, // ID de carga asignada
-    this.idVehiculoCorrecto, // ID correcto del vehículo (para cargas especiales)
+    this.idVehiculoCorrecto, // ID correcto del vehículo
+    this.nombreConductorValidado, // Nombre del conductor validado
   });
 
   @override
@@ -105,24 +107,33 @@ class _CargaState extends State<Carga> {
     // 🔍 CORRECCIÓN: Asignar tipo de carga desde el widget
     _tipoCarga = widget.tipoCargaPreseleccionado ?? 'ordinaria';
 
-    print('🔍 DEBUG: initState() - Tipo de carga asignado: $_tipoCarga');
+    print('DEBUG: initState() - Tipo de carga asignado: $_tipoCarga');
     print(
-      '🔍 DEBUG: widget.tipoCargaPreseleccionado: ${widget.tipoCargaPreseleccionado}',
+      'DEBUG: widget.tipoCargaPreseleccionado: ${widget.tipoCargaPreseleccionado}',
     );
+
+    // Llenar automáticamente el campo del conductor si viene del QR validado
+    if (widget.nombreConductorValidado != null &&
+        widget.nombreConductorValidado!.isNotEmpty) {
+      _personaQueCargaController.text = widget.nombreConductorValidado!;
+      print(
+        'DEBUG: Nombre del conductor validado asignado automáticamente: ${widget.nombreConductorValidado}',
+      );
+    }
 
     // Si es carga ordinaria, verificar si ya cargó hoy (candado de seguridad)
     if (_tipoCarga == 'ordinaria') {
       print(
-        '🔍 DEBUG: Es carga ordinaria - Iniciando verificación de carga diaria',
+        'DEBUG: Es carga ordinaria - Iniciando verificación de carga diaria',
       );
       _verificarSiYaCargoHoy();
     } else {
       print(
-        '🔍 DEBUG: No es carga ordinaria (${_tipoCarga}) - No se verifica carga diaria',
+        'DEBUG: No es carga ordinaria (${_tipoCarga}) - No se verifica carga diaria',
       );
     }
 
-    // 🔍 CORRECCIÓN: Obtener precio del combustible al iniciar (solo si está montado)
+    // Obtener precio del combustible al iniciar (solo si está montado)
     if (mounted) {
       _obtenerPrecioCombustible();
     }

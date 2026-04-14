@@ -24,85 +24,119 @@ class _ValidarConductorScreenState extends State<ValidarConductorScreen> {
   // Estado del conductor y UI
   String? _codigoEscaneado;
   bool _isLoading = false;
-  bool _scannerActivo = true;
 
   // Datos del conductor validado
   Map<String, dynamic>? _datosConductor;
   String? _estadoCredencial;
+  String? _vigenciaExtraida; // Nueva variable para vigencia del QR
+  String? _nombreConductor; // Nombre del conductor extraído del QR
+  String? _vigenciaCredencial; // Vigencia de la credencial para mostrar
 
   // =============================================================================
-  // MÉTODO PRINCIPAL: Enviar datos a API SIARH
+  // MÉTODO PRINCIPAL: Validar vigencia localmente
   // =============================================================================
-  Future<void> _enviarDatosApi(String id) async {
+  void _validarVigenciaLocal(String qrCompleto, String? vigencia) {
     setState(() {
       _isLoading = true;
-      _scannerActivo = false;
+      _vigenciaExtraida = vigencia;
     });
 
-    final url = Uri.parse(
-      'http://187.216.141.163:8080/api_siarh/api_estatus_conductor.php',
-    );
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: json.encode({'action': 'get_conductor', 'id': id}),
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        debugPrint('Respuesta API: ${response.body}');
-
-        if (responseData['success'] == true && responseData['data'] != null) {
-          final Map<String, dynamic> conductorData = responseData['data'];
-          final String vigenciaEstado = responseData['vigencia'] ?? 'N/A';
-
-          // Guardar datos del conductor
-          setState(() {
-            _datosConductor = conductorData;
-            _estadoCredencial = vigenciaEstado;
-            _codigoEscaneado = _formatearDatosConductor(
-              conductorData,
-              vigenciaEstado,
-            );
-          });
-
-          // Mostrar mensaje de éxito
-          _mostrarMensaje('Conductor validado correctamente', Colors.green);
-        } else {
-          // La API respondió pero no encontró datos
-          final String message =
-              responseData['message'] ??
-              'No se encontraron detalles para el ID proporcionado.';
-          setState(() {
-            _codigoEscaneado = 'Error: $message';
-          });
-          _mostrarMensaje(message, Colors.orange);
-        }
-      } else {
-        // Error HTTP
-        final String errorMessage =
-            'Error del servidor: ${response.statusCode}';
-        setState(() {
-          _codigoEscaneado = errorMessage;
-        });
-        _mostrarMensaje(
-          'Error al consultar la credencial: ${response.statusCode}',
-          Colors.red,
-        );
+    // Extraer nombre del QR
+    String? nombreExtraido;
+    if (qrCompleto.contains('NOMBRE:')) {
+      final RegExp nombreRegex = RegExp(r'NOMBRE:([^|]+)');
+      final Match? match = nombreRegex.firstMatch(qrCompleto);
+      if (match != null) {
+        nombreExtraido = match.group(1)?.trim();
+        debugPrint('👤 Nombre extraído: $nombreExtraido');
       }
-    } catch (e) {
-      // Error de red o parseo
-      final String errorMessage = 'Error de conexión: $e';
-      setState(() {
-        _codigoEscaneado = errorMessage;
-      });
-      _mostrarMensaje('Error de conexión al API: $e', Colors.red);
-    } finally {
+    }
+
+    // Validar vigencia
+    if (vigencia == null || vigencia.isEmpty) {
+      _mostrarMensaje(
+        'La credencial no contiene información de vigencia',
+        Colors.red,
+      );
       setState(() {
         _isLoading = false;
       });
+      return;
+    }
+
+    // Parsear vigencia (ej: "DICIEMBRE 2026")
+    final RegExp mesAnoRegex = RegExp(r'([A-Z]+)\s+(\d{4})');
+    final Match? match = mesAnoRegex.firstMatch(vigencia.toUpperCase());
+
+    if (match == null) {
+      _mostrarMensaje('Formato de vigencia no reconocido', Colors.red);
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final String mes = match.group(1)!;
+    final int ano = int.parse(match.group(2)!);
+
+    // Mapeo de meses a números
+    final Map<String, int> meses = {
+      'ENERO': 1,
+      'FEBRERO': 2,
+      'MARZO': 3,
+      'ABRIL': 4,
+      'MAYO': 5,
+      'JUNIO': 6,
+      'JULIO': 7,
+      'AGOSTO': 8,
+      'SEPTIEMBRE': 9,
+      'OCTUBRE': 10,
+      'NOVIEMBRE': 11,
+      'DICIEMBRE': 12,
+    };
+
+    final int mesNumero = meses[mes] ?? 1;
+    final DateTime fechaVigencia = DateTime(
+      ano,
+      mesNumero + 1,
+      0,
+    ); // Último día del mes
+    final DateTime fechaActual = DateTime.now();
+
+    debugPrint(
+      '📅 Fecha actual: ${fechaActual.day}/${fechaActual.month}/${fechaActual.year}',
+    );
+    debugPrint(
+      '📅 Fecha vigencia: ${fechaVigencia.day}/${fechaVigencia.month}/${fechaVigencia.year}',
+    );
+
+    // Verificar si está vencida
+    if (fechaActual.isAfter(fechaVigencia)) {
+      // CREDENCIAL VENCIDA
+      setState(() {
+        _isLoading = false;
+        _codigoEscaneado = 'VENCIDA';
+        _nombreConductor = nombreExtraido;
+        _vigenciaCredencial = vigencia;
+      });
+
+      _mostrarMensaje(
+        '❌ CREDENCIAL VENCIDA\nVigencia: $vigencia\nNo puede realizar la carga',
+        Colors.red,
+      );
+    } else {
+      // CREDENCIAL VIGENTE
+      setState(() {
+        _isLoading = false;
+        _codigoEscaneado = 'VIGENTE';
+        _nombreConductor = nombreExtraido;
+        _vigenciaCredencial = vigencia;
+      });
+
+      _mostrarMensaje(
+        '✅ CREDENCIAL VIGENTE\nConductor: $nombreExtraido\nVigencia: $vigencia\nPuede continuar con la carga',
+        Colors.green,
+      );
     }
   }
 
@@ -165,19 +199,68 @@ Estado de Credencial: $vigenciaEstado
             onDetect: (capture) {
               final List<Barcode> barcodes = capture.barcodes;
               if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
-                final String rawValue = barcodes.first.rawValue!;
+                final String rawValue = barcodes.first.rawValue!.trim();
+
+                debugPrint('📷 QR Detectado: "$rawValue"');
+
+                String? idExtraido;
+
+                // Opción 1: QR con formato URL (?id=12345)
                 final uri = Uri.tryParse(rawValue);
-                final String? idExtraido = uri?.queryParameters['id'];
+                if (uri?.queryParameters['id'] != null) {
+                  idExtraido = uri!.queryParameters['id'];
+                  debugPrint('🔗 ID desde URL: $idExtraido');
+                }
+                // Opción 2: QR con formato completo (RFC:EAHJ020624|NOMBRE:...)
+                else if (rawValue.contains('CUIP:')) {
+                  // Extraer CUIP del QR completo (prioridad sobre RFC)
+                  final RegExp cuipRegex = RegExp(r'CUIP:([^|]+)');
+                  final Match? match = cuipRegex.firstMatch(rawValue);
+                  if (match != null) {
+                    idExtraido = match.group(1)?.trim();
+                    debugPrint('🆔 CUIP extraído: $idExtraido');
+                  }
+                } else if (rawValue.contains('RFC:')) {
+                  // Extraer RFC del QR completo (alternativa)
+                  final RegExp rfcRegex = RegExp(r'RFC:([^|]+)');
+                  final Match? match = rfcRegex.firstMatch(rawValue);
+                  if (match != null) {
+                    idExtraido = match.group(1)?.trim();
+                    debugPrint('📋 RFC extraído: $idExtraido');
+                  }
+                }
+                // Opción 3: QR con texto simple (12345)
+                else if (rawValue.isNotEmpty) {
+                  idExtraido = rawValue;
+                  debugPrint('📝 ID desde texto: $idExtraido');
+                }
+
+                // Extraer vigencia del QR si existe
+                String? vigenciaExtraida;
+                if (rawValue.contains('VIGENCIA:')) {
+                  final RegExp vigenciaRegex = RegExp(r'VIGENCIA:([^|]+)');
+                  final Match? match = vigenciaRegex.firstMatch(rawValue);
+                  if (match != null) {
+                    vigenciaExtraida = match.group(1)?.trim();
+                    debugPrint('📅 Vigencia extraída: $vigenciaExtraida');
+                  }
+                }
 
                 // Validar que se haya obtenido el ID
                 if (idExtraido != null && idExtraido.isNotEmpty) {
+                  // Detener escáner para evitar múltiples detecciones
+                  _scannerController.stop();
                   Navigator.pop(context); // Cerrar escáner
-                  _enviarDatosApi(idExtraido); // Enviar a API
+                  _validarVigenciaLocal(
+                    rawValue,
+                    vigenciaExtraida,
+                  ); // Validar localmente
                 } else {
                   // QR no contiene ID válido
+                  _scannerController.stop();
                   Navigator.pop(context);
                   _mostrarMensaje(
-                    'No se encontró un ID válido en el código QR',
+                    'El QR escaneado no contiene un ID válido',
                     Colors.red,
                   );
                 }
@@ -193,11 +276,9 @@ Estado de Credencial: $vigenciaEstado
   // MÉTODO PRINCIPAL: Determinar si el conductor puede continuar
   // =============================================================================
   bool _puedeContinuar() {
-    if (_datosConductor == null || _estadoCredencial == null) return false;
-
-    // Estados permitidos para continuar
-    final estadosPermitidos = ['VIGENTE', 'ACTIVO', 'VÁLIDO'];
-    return estadosPermitidos.contains(_estadoCredencial?.toUpperCase());
+    return _codigoEscaneado == 'VIGENTE' &&
+        _nombreConductor != null &&
+        _nombreConductor!.isNotEmpty;
   }
 
   // =============================================================================
@@ -205,11 +286,11 @@ Estado de Credencial: $vigenciaEstado
   // =============================================================================
   void _continuar() {
     if (_puedeContinuar()) {
-      // Retornar datos del conductor a la pantalla anterior
+      // Retornar datos del conductor validado a la pantalla anterior
       Navigator.of(context).pop({
         'success': true,
-        'conductor': _datosConductor,
-        'estado': _estadoCredencial,
+        'nombre': _nombreConductor,
+        'vigencia': _vigenciaCredencial,
       });
     }
   }
@@ -222,7 +303,6 @@ Estado de Credencial: $vigenciaEstado
       _codigoEscaneado = null;
       _datosConductor = null;
       _estadoCredencial = null;
-      _scannerActivo = true;
     });
     _abrirEscanner();
   }
@@ -285,6 +365,42 @@ Estado de Credencial: $vigenciaEstado
                     : Colors.red,
               ),
             ),
+
+            // Mostrar vigencia si está disponible
+            if (_vigenciaExtraida != null) ...[
+              const SizedBox(height: 15),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: Colors.orange.shade700,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Vigencia: $_vigenciaExtraida',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 30),
 
             // Botón de escanear (solo si no hay datos)

@@ -1,4 +1,4 @@
-package com.example.combustible
+package com.ssp.combustible
 
 import io.flutter.embedding.android.FlutterActivity
 
