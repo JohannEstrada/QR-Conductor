@@ -77,22 +77,68 @@ class _PagInicioState extends State<PagInicio> {
                 ],
               ),
               Expanded(
-                child: MobileScanner(
-                  controller: controller,
-                  onDetect: (capture) {
-                    final List<Barcode> barcodes = capture.barcodes;
-                    if (barcodes.isNotEmpty &&
-                        barcodes.first.rawValue != null) {
-                      final String rawValue = barcodes.first.rawValue!.trim();
-
-                      // Detener escáner
-                      controller.stop();
-                      Navigator.of(context).pop();
-
-                      // Validar QR localmente
-                      _validarQRDirectamente(rawValue);
-                    }
-                  },
+                child: Stack(
+                  children: [
+                    // Cámara de escaneo
+                    MobileScanner(
+                      controller: controller,
+                      onDetect: (capture) {
+                        final List<Barcode> barcodes = capture.barcodes;
+                        if (barcodes.isNotEmpty &&
+                            barcodes.first.rawValue != null) {
+                          final String rawValue = barcodes.first.rawValue!
+                              .trim();
+                          controller.stop();
+                          Navigator.of(context).pop();
+                          _validarQRDirectamente(rawValue);
+                        }
+                      },
+                    ),
+                    // Overlay guía para QR
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(
+                            0.3,
+                          ), // Fondo semitransparente
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 250,
+                            height: 250,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color(
+                                  0xFF0A2E5C,
+                                ), // Borde azul corporativo
+                                width: 3,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.qr_code_scanner,
+                                  size: 50,
+                                  color: Color(0xFF0A2E5C),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Alinee el QR aquí',
+                                  style: TextStyle(
+                                    color: Color(0xFF0A2E5C),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
