@@ -835,7 +835,14 @@ class _InfoVehicState extends State<InfoVehic> {
   // MÉTODO DE NAVEGACIÓN A CARGA - Flujo normal (para candado)
   // =============================================================================
   void _navegarACargaNormal(BuildContext context) {
-    print('🚀 Navegando a página de cargas');
+    print('DEBUG: Navegando a página de cargas');
+    print(
+      'DEBUG: InfoVehic - widget.nombreConductorValidado = ${widget.nombreConductorValidado}',
+    );
+    print(
+      'DEBUG: InfoVehic - widget.tipoCargaPreseleccionado = ${widget.tipoCargaPreseleccionado}',
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1214,6 +1221,8 @@ class _InfoVehicState extends State<InfoVehic> {
                 idCargaAsignada: idCargaAsignada,
                 idVehiculoCorrecto:
                     idVehiculoCorrecto, // Pasar ID correcto del vehículo
+                nombreConductorValidado: widget
+                    .nombreConductorValidado, // Pasar nombre del conductor validado
               ),
             ),
           );
@@ -1309,6 +1318,8 @@ class _InfoVehicState extends State<InfoVehic> {
               idCargaAsignada: idCargaAsignada, // 🆕 Usar ID de la tabla base
               idVehiculoCorrecto:
                   idVehiculo, // 🆕 Pasar ID correcto del vehículo
+              nombreConductorValidado: widget
+                  .nombreConductorValidado, // Pasar nombre del conductor validado
             ),
           ),
         );

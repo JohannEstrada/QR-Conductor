@@ -113,11 +113,23 @@ class _CargaState extends State<Carga> {
     );
 
     // Llenar automáticamente el campo del conductor si viene del QR validado
+    print('DEBUG: Verificando nombre del conductor...');
+    print(
+      'DEBUG: widget.nombreConductorValidado = ${widget.nombreConductorValidado}',
+    );
+    print(
+      'DEBUG: widget.tipoCargaPreseleccionado = ${widget.tipoCargaPreseleccionado}',
+    );
+
     if (widget.nombreConductorValidado != null &&
         widget.nombreConductorValidado!.isNotEmpty) {
       _personaQueCargaController.text = widget.nombreConductorValidado!;
       print(
         'DEBUG: Nombre del conductor validado asignado automáticamente: ${widget.nombreConductorValidado}',
+      );
+    } else {
+      print(
+        'DEBUG: Nombre del conductor es NULL o está vacío - No se asigna automáticamente',
       );
     }
 

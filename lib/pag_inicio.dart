@@ -185,10 +185,8 @@ class _PagInicioState extends State<PagInicio> {
         _vigenciaCredencial = null;
       });
 
-      _mostrarMensaje(
-        'CREDENCIAL VENCIDA\nVigencia: $vigenciaExtraida\nNo puede realizar la carga',
-        color: Colors.red,
-      );
+      // Mostrar ventana emergente de credencial vencida
+      _mostrarDialogoCredencialVencida(vigenciaExtraida);
     } else {
       // CREDENCIAL VIGENTE
       setState(() {
@@ -202,6 +200,105 @@ class _PagInicioState extends State<PagInicio> {
         color: Colors.green,
       );
     }
+  }
+
+  // =============================================================================
+  // MÉTODO PARA MOSTRAR DIÁLOGO DE CREDENCIAL VENCIDA
+  // =============================================================================
+  void _mostrarDialogoCredencialVencida(String vigenciaExtraida) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // No cerrar al tocar fuera
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFFF5F5F5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Container(
+          width:
+              MediaQuery.of(context).size.width *
+              0.8, // 80% del ancho de la pantalla
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icono de error/vencimiento
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  size: 40,
+                  color: Colors.red,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Título
+              const Text(
+                'Credencial Vencida',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Mensaje principal
+              const Text(
+                'No puede realizar la carga',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Color(0xFF333333)),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Mensaje de vigencia
+              Text(
+                'La credencial está vencida\nVigencia: $vigenciaExtraida',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Botón de regresar
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Cerrar ventana
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 3,
+                  ),
+                  child: const Text(
+                    'Regresar',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // =============================================================================
@@ -687,6 +784,7 @@ class _PagInicioState extends State<PagInicio> {
                                     _showInputDialog(
                                       context,
                                       tipoCarga: 'extraordinaria',
+                                      nombreConductor: _nombreConductorValidado,
                                     );
                                   }
                                   // Si no es válido, el método _validarConductor ya mostró el error
@@ -724,6 +822,7 @@ class _PagInicioState extends State<PagInicio> {
                                     _showInputDialog(
                                       context,
                                       tipoCarga: 'bidones',
+                                      nombreConductor: _nombreConductorValidado,
                                     );
                                   }
                                   // Si no es válido, el método _validarConductor ya mostró el error
@@ -1131,6 +1230,12 @@ class _PagInicioState extends State<PagInicio> {
 
                     // Cierra el diálogo de búsqueda
                     Navigator.of(context).pop();
+
+                    // DEBUG: Verificar que el nombre se está pasando correctamente
+                    print(
+                      'DEBUG: pag_inicio - nombreConductor = $nombreConductor',
+                    );
+                    print('DEBUG: pag_inicio - tipoCarga = $tipoCarga');
 
                     // Navega a la página de información del vehículo
                     Navigator.push(
