@@ -1,20 +1,8 @@
-// =============================================================================
-// IMPORTACIONES NECESARIAS PARA LA PÁGINA
-// =============================================================================
-import 'package:flutter/material.dart'; // UI de Flutter
-import 'busq_vehic.dart';
-import 'login_page.dart';
-import 'services/laravel_api_service.dart'; // Servicio para validación con API
-import 'pag_inicio.dart'; // Importar para volver al inicio
-import 'carga.dart'; // 🆕 Importar Carga para navegación
+import 'package:flutter/material.dart';
+import 'services/laravel_api_service.dart';
+import 'pag_inicio.dart';
+import 'carga.dart';
 
-// =============================================================================
-// CLASE InfoVehic - Página principal de información del vehículo
-// =============================================================================
-// Función: Mostrar datos del vehículo y opciones de carga
-// Parámetros: número de serie, datos del vehículo, cargas asignadas
-// Características: Validación de días, tipos de carga, navegación segura
-// =============================================================================
 class InfoVehic extends StatefulWidget {
   // Parámetros recibidos desde PagInicio
   final String numeroSerie; // Número de serie del vehículo
@@ -45,186 +33,36 @@ class InfoVehic extends StatefulWidget {
   State<InfoVehic> createState() => _InfoVehicState();
 }
 
-// =============================================================================
-// PÁGINA INFORMATIVA - Sin carga extraordinaria asignada
-// =============================================================================
-// Widget: Página completa que informa que no hay carga extraordinaria
-// Lógica: Reemplaza el SnackBar por una página informativa
-// Acción: Permite regresar y reintentar más tarde
-// =============================================================================
-
-class _PaginaSinExtraordinaria extends StatelessWidget {
-  // Número de serie del vehículo
-  final String numeroSerie;
-
-  // Datos del vehículo para mostrar información
-  final Map<String, dynamic>? datosVehiculo;
-
-  // Constructor con parámetros requeridos y opcionales
-  const _PaginaSinExtraordinaria({
-    required this.numeroSerie, // Requerido
-    this.datosVehiculo, // Opcional
-  });
-
-  // Construir la interfaz de la página
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // AppBar con título personalizado y botón de regreso
-      appBar: AppBar(
-        title: Text('Carga - $numeroSerie'), // Título dinámico
-        backgroundColor: const Color(0xFF0A2E5C), // Color corporativo
-        foregroundColor: Colors.white, // Texto blanco
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back), // Icono de regreso
-          onPressed: () =>
-              Navigator.of(context).pop(), // Regresar a página anterior
-        ),
-      ),
-      // 🎨 Color de fondo de la página
-      backgroundColor: const Color(0xFFF5F5F5), // Gris claro
-      // 📱 Cuerpo principal de la página
-      body: Center(
-        child: Padding(
-          // 📏 Espaciado general de 16px
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-            // 🎨 Diseño de la tarjeta informativa
-            color: Colors.orange[50], // Fondo naranja claro
-            elevation: 4, // Sombra sutil
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15), // Bordes redondeados
-              side: BorderSide(
-                color: Colors.orange[300]!,
-                width: 2,
-              ), // Borde naranja
-            ),
-            child: Padding(
-              // 📏 Espaciado interno de 24px
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min, // Tamaño mínimo del contenido
-                children: [
-                  // 🎯 Icono principal de información
-                  const Icon(
-                    Icons.info_outline, // Icono de información
-                    size: 80, // Tamaño grande
-                    color: Colors.orange, // Color naranja
-                  ),
-
-                  const SizedBox(height: 20), // Espaciado vertical
-                  // 📝 Título principal del mensaje
-                  const Text(
-                    'Carga Extraordinaria No Asignada',
-                    style: TextStyle(
-                      fontSize: 20, // Tamaño de fuente grande
-                      fontWeight: FontWeight.bold, // Texto en negrita
-                      color: Colors.orange, // Color naranja
-                    ),
-                    textAlign: TextAlign.center, // Centrado
-                  ),
-
-                  const SizedBox(height: 15), // Espaciado vertical
-                  // Mensaje principal con información del vehículo
-                  Text(
-                    'El vehículo $numeroSerie no tiene una carga extraordinaria asignada en este momento.',
-                    style: const TextStyle(fontSize: 16), // Tamaño normal
-                    textAlign: TextAlign.center, // Centrado
-                  ),
-
-                  const SizedBox(height: 10), // Espaciado vertical
-                  // 📄 Mensaje secundario con instrucciones
-                  const Text(
-                    'Puede que se le asigne más tarde. Por favor, inténtelo de nuevo.',
-                    style: TextStyle(
-                      fontSize: 14, // Tamaño pequeño
-                      color: Colors.grey, // Color gris
-                      fontStyle: FontStyle.italic, // Cursiva
-                    ),
-                    textAlign: TextAlign.center, // Centrado
-                  ),
-                  const SizedBox(height: 20), // Espaciado vertical final
-                  // 🔘 Botón de regreso principal
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).pop(), // Regresar a página anterior
-                    icon: const Icon(Icons.arrow_back), // Icono de regreso
-                    label: const Text('Regresar'), // Texto del botón
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF135DD8,
-                      ), // Color corporativo
-                      foregroundColor: Colors.white, // Texto blanco
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 15, // Espaciado vertical
-                        horizontal: 30, // Espaciado horizontal
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          10,
-                        ), // Bordes redondeados
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// ESTADO PRINCIPAL DE InfoVehic - Lógica y control de la página
-// =============================================================================
-// Función: Gestionar el estado y la lógica de la página principal
-// Características: Validación de días, tipos de carga, navegación
-// Estados: Sin verificación diaria (eliminada para mejor UX)
-// =============================================================================
-
 class _InfoVehicState extends State<InfoVehic> {
-  // 🗑️ Estados eliminados del candado diario (mejora de UX)
-  // bool _verificandoCarga = true;    // Ya no se verifica carga diaria
-  // bool _yaCargoHoy = false;          // Ya no se bloquea por día
-  // bool _errorVerificacion = false;     // Ya no hay errores de verificación
-
-  // 🔄 Inicialización del estado del widget
+  // Inicialización del estado del widget
   @override
   void initState() {
     super.initState();
     // Eliminada verificación diaria al iniciar para mejor experiencia
-    // _verificarCargaDiaria(); // Método comentado/eliminado
   }
 
-  // 🆕 Método helper para reemplazar NULL con guiones
+  // Método helper para reemplazar NULL con guiones
   String _formatearDato(dynamic dato) {
     if (dato == null) {
-      return '------------'; // 🎯 Guiones para NULL
+      return '------------'; // Guiones para NULL
     }
     final String texto = dato.toString();
     if (texto.isEmpty || texto.toLowerCase() == 'null') {
-      return '------------'; // 🎯 Guiones para vacío o "null" string
+      return '------------'; // Guiones para vacío o "null" string
     }
-    return texto; // 🎯 Retornar dato válido
+    return texto; // Retornar dato válido
   }
 
   // =============================================================================
   // MÉTODO AUXILIAR: Obtener ID de carga asignada
   // =============================================================================
-  // Función: Extraer el ID de la primera carga asignada
-  // Retorna: String con el ID o null si no hay cargas
-  // Lógica: Busca en la lista de cargas del vehículo
-  // =============================================================================
   String? _getIdCargaAsignada() {
-    // 🛡️ Verificar si hay cargas disponibles
+    // Verificar si hay cargas disponibles
     if (widget.cargasDelVehiculo == null || widget.cargasDelVehiculo!.isEmpty) {
       return null; // No hay cargas asignadas
     }
 
-    // 🎯 Obtener ID de la primera carga de la lista
+    // Obtener ID de la primera carga de la lista
     final primeraCarga = widget.cargasDelVehiculo!.first; // Primer elemento
     final idCarga = primeraCarga['id']; // Extraer ID del mapa
 
@@ -234,153 +72,17 @@ class _InfoVehicState extends State<InfoVehic> {
   // =============================================================================
   // MÉTODO AUXILIAR: Obtener ID de carga de bidones
   // =============================================================================
-  // Función: Extraer ID de carga de bidones desde datosBidones
-  // Retorna: String con el ID o null si no hay cargas
-  // =============================================================================
+
   String? _getIdCargaBidon(Map<String, dynamic> datosBidones) {
-    // 🎯 Obtener ID del bidón desde el campo id_carga_bidon del GET
+    // Obtener ID del bidón desde el campo id_carga_bidon del GET
     final idCargaBidon = datosBidones['id_carga_bidon']?.toString();
     return idCargaBidon;
   }
 
   // =============================================================================
-  // MÉTODO AUXILIAR: Obtener ID de carga extraordinaria
-  // =============================================================================
-  // Función: Extraer ID de la primera carga extraordinaria
-  // Parámetros: Lista de cargas extraordinarias
-  // Retorna: String con el ID o null si no hay cargas
-  // =============================================================================
-  String? _getIdCargaExtraordinaria(List<dynamic> cargasExtraordinarias) {
-    // 🛡️ Verificar si hay cargas extraordinarias
-    if (cargasExtraordinarias.isEmpty) {
-      return null; // No hay cargas extraordinarias
-    }
-
-    // 🎯 Obtener ID de la primera carga extraordinaria
-    final primeraCarga = cargasExtraordinarias.first; // Primer elemento
-    final idCarga = primeraCarga['id']; // Extraer ID
-    return idCarga?.toString(); // Retornar ID como String
-  }
-
-  // =============================================================================
-  // DIÁLOGO DE VEHÍCULO NO ENCONTRADO - Ventana emergente
-  // =============================================================================
-  // Función: Muestra diálogo cuando el vehículo no existe en el sistema
-  // UI: AlertDialog con icono, mensaje y botón para regresar
-  // Acción: Permite regresar a página de inicio para corregir el número de serie
-  // =============================================================================
-  void _mostrarDialogoVehiculoNoEncontrado(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // No cerrar al tocar fuera
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF5F5F5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        contentPadding: EdgeInsets.zero,
-        content: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 🎯 Icono de error
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.error_outline,
-                  size: 40,
-                  color: Colors.red,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // 📋 Título
-              const Text(
-                'Vehículo No Encontrado',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // 📝 Mensaje principal
-              const Text(
-                'El número de serie ingresado no existe en el sistema.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Color(0xFF333333)),
-              ),
-
-              const SizedBox(height: 8),
-
-              // 📝 Mensaje secundario
-              const Text(
-                'Por favor, verifique el número de serie e intente nuevamente.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Color(0xFF757575)),
-              ),
-
-              const SizedBox(height: 24),
-
-              // 🚀 Botón de regreso
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Cerrar diálogo
-
-                    // 🏠 Volver a página de inicio
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => PagInicio()),
-                      (route) => false,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 3,
-                  ),
-                  child: const Text(
-                    'Volver al inicio',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // =============================================================================
   // DIÁLOGO DE SIN EXTRAORDINARIAS - Ventana emergente
   // =============================================================================
-  // Función: Muestra diálogo cuando no hay cargas extraordinarias asignadas
-  // UI: AlertDialog con icono, mensaje y botón para regresar
-  // Acción: Permite regresar a página de inicio
-  // =============================================================================
   void _mostrarDialogoSinExtraordinarias(BuildContext context) {
-    print('🔍 DEBUG: Entrando a _mostrarDialogoSinExtraordinarias');
-    print('🔍 DEBUG: Context válido en diálogo: ${context.mounted}');
-
     showDialog(
       context: context,
       barrierDismissible: false, // No cerrar al tocar fuera

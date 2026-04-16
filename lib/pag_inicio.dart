@@ -28,9 +28,9 @@ class PagInicio extends StatefulWidget {
 
 class _PagInicioState extends State<PagInicio> {
   // Variables de estado para validación de credencial
-  bool _credencialValidada = false;
-  String? _nombreConductorValidado;
-  String? _vigenciaCredencial;
+  bool _credencialValidada = false; // Si el QR ya fue validado
+  String? _nombreConductorValidado; // Nombre del conductor validado
+  String? _vigenciaCredencial; // Vigencia de la credencial
 
   // Método para mostrar mensajes emergentes en la pantalla
   void _mostrarMensaje(String mensaje, {Color color = Colors.red}) {
@@ -55,11 +55,16 @@ class _PagInicioState extends State<PagInicio> {
     // Mostrar diálogo con cámara directamente
     await showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible:
+          false, //  No se puede cerrar pulsando fuera del cuadro
       builder: (context) => Dialog(
         child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.7,
+          width:
+              MediaQuery.of(context).size.width *
+              0.9, // Obtiene el 90% del ancho de la pantalla
+          height:
+              MediaQuery.of(context).size.height *
+              0.7, // Obtiene el 70% de la altura de la pantalla
           child: Column(
             children: [
               AppBar(
@@ -81,16 +86,23 @@ class _PagInicioState extends State<PagInicio> {
                   children: [
                     // Cámara de escaneo
                     MobileScanner(
+                      // Widget que muestra la cámara y escanea códigos QR
                       controller: controller,
                       onDetect: (capture) {
+                        // Esto se ejecuta cuando se detecta un código
                         final List<Barcode> barcodes = capture.barcodes;
                         if (barcodes.isNotEmpty &&
                             barcodes.first.rawValue != null) {
-                          final String rawValue = barcodes.first.rawValue!
+                          // Verifica que el código tenga texto
+                          final String rawValue = barcodes
+                              .first
+                              .rawValue! // Jala el primer código en crudo
                               .trim();
                           controller.stop();
                           Navigator.of(context).pop();
-                          _validarQRDirectamente(rawValue);
+                          _validarQRDirectamente(
+                            rawValue,
+                          ); //Llama al método, pasa el código a validación
                         }
                       },
                     ),
@@ -155,30 +167,39 @@ class _PagInicioState extends State<PagInicio> {
     // Extraer vigencia del QR
     String? vigenciaExtraida;
     if (qrCompleto.contains('VIGENCIA:')) {
-      final RegExp vigenciaRegex = RegExp(r'VIGENCIA:([^|]+)');
-      final Match? match = vigenciaRegex.firstMatch(qrCompleto);
+      //Verifica que se tenga la vigencia
+      final RegExp vigenciaRegex = RegExp(r'VIGENCIA:([^|]+)'); // Extrae todo
+      final Match? match = vigenciaRegex.firstMatch(
+        qrCompleto,
+      ); // Buca coincidencias
       if (match != null) {
-        vigenciaExtraida = match.group(1)?.trim();
+        // Si hay coincidencia
+        vigenciaExtraida = match.group(1)?.trim(); // Extrae el valor
       }
     }
 
     // Extraer nombre del QR
-    String? nombreExtraido;
+    String? nombreExtraido; // Variable para almacenar el nombre extraído
     if (qrCompleto.contains('NOMBRE:')) {
-      final RegExp nombreRegex = RegExp(r'NOMBRE:([^|]+)');
-      final Match? match = nombreRegex.firstMatch(qrCompleto);
+      // Verifica que se tenga el nombre
+      final RegExp nombreRegex = RegExp(r'NOMBRE:([^|]+)'); // Extrae todo
+      final Match? match = nombreRegex.firstMatch(
+        qrCompleto,
+      ); // Busca coincidencias
       if (match != null) {
-        nombreExtraido = match.group(1)?.trim();
+        // Si hay coincidencia
+        nombreExtraido = match.group(1)?.trim(); // Extrae el valor
       }
     }
 
-    // Validar vigencia
     if (vigenciaExtraida == null || vigenciaExtraida.isEmpty) {
+      // Validar vigencia
       _mostrarMensaje(
         'La credencial no contiene información de vigencia',
         color: Colors.red,
       );
       setState(() {
+        // Llama la UI p
         _credencialValidada = false;
         _nombreConductorValidado = null;
         _vigenciaCredencial = null;
@@ -187,8 +208,12 @@ class _PagInicioState extends State<PagInicio> {
     }
 
     // Parsear vigencia
-    final RegExp mesAnoRegex = RegExp(r'([A-Z]+)\s+(\d{4})');
-    final Match? match = mesAnoRegex.firstMatch(vigenciaExtraida.toUpperCase());
+    final RegExp mesAnoRegex = RegExp(
+      r'([A-Z]+)\s+(\d{4})',
+    ); // Extrae el mes y el año
+    final Match? match = mesAnoRegex.firstMatch(
+      vigenciaExtraida.toUpperCase(),
+    ); // Busca coincidencias
 
     if (match == null) {
       _mostrarMensaje('Formato de vigencia no reconocido', color: Colors.red);
@@ -200,8 +225,8 @@ class _PagInicioState extends State<PagInicio> {
       return;
     }
 
-    final String mes = match.group(1)!;
-    final int ano = int.parse(match.group(2)!);
+    final String mes = match.group(1)!; // Extrae el mes
+    final int ano = int.parse(match.group(2)!); // Extrae el año
 
     final Map<String, int> meses = {
       'ENERO': 1,
@@ -218,12 +243,17 @@ class _PagInicioState extends State<PagInicio> {
       'DICIEMBRE': 12,
     };
 
-    final int mesNumero = meses[mes] ?? 1;
-    final DateTime fechaVigencia = DateTime(ano, mesNumero + 1, 0);
-    final DateTime fechaActual = DateTime.now();
+    final int mesNumero = meses[mes] ?? 1; // Extrae el número del mes
+    final DateTime fechaVigencia = DateTime(
+      ano,
+      mesNumero + 1,
+      0,
+    ); // Fecha de vigencia
+    final DateTime fechaActual = DateTime.now(); // Fecha actual
 
     // Verificar si está vencida
     if (fechaActual.isAfter(fechaVigencia)) {
+      // Si la fecha actual es posterior a la fecha de vigencia
       // CREDENCIAL VENCIDA
       setState(() {
         _credencialValidada = false;
@@ -367,7 +397,9 @@ class _PagInicioState extends State<PagInicio> {
     }
   }
 
-  // 🆕 Método para mostrar diálogo de vehículo no encontrado
+  //=============================================================
+  //  Método para mostrar diálogo de vehículo no encontrado
+  // ============================================================
   void _mostrarDialogoVehiculoNoEncontrado(String mensaje) {
     showDialog(
       context: context,
@@ -397,7 +429,7 @@ class _PagInicioState extends State<PagInicio> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 🎨 Icono y título en la parte superior
+                  // Icono y título en la parte superior
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -412,7 +444,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 🎯 Título principal
+                  // Título principal
                   const Text(
                     'Vehículo No Encontrado',
                     textAlign: TextAlign.center,
@@ -424,7 +456,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 📝 Mensaje de error
+                  // Mensaje de error
                   const Text(
                     'El número de serie ingresado no existe en el sistema',
                     textAlign: TextAlign.center,
@@ -436,7 +468,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 12),
 
-                  // 💡 Sugerencia
+                  // Sugerencia
                   const Text(
                     'Por favor, verifique el número de serie e intente nuevamente.',
                     textAlign: TextAlign.center,
@@ -444,7 +476,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 24),
 
-                  // 🔘 Botón de acción
+                  // Botón de acción
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -485,7 +517,9 @@ class _PagInicioState extends State<PagInicio> {
     );
   }
 
-  // 🆕 Método para mostrar diálogo de sin cargas extraordinarias
+  //=============================================================
+  //  Método para mostrar diálogo de sin cargas extraordinarias
+  // ============================================================
   void _mostrarDialogoSinCargasExtraordinarias(String mensaje) {
     showDialog(
       context: context,
@@ -515,7 +549,7 @@ class _PagInicioState extends State<PagInicio> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 🎯 Ícono de advertencia
+                  // Ícono de advertencia
                   Container(
                     width: 60,
                     height: 60,
@@ -531,7 +565,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 📝 Título
+                  // Título
                   const Text(
                     'Sin Cargas Extraordinarias',
                     textAlign: TextAlign.center,
@@ -543,7 +577,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 12),
 
-                  // 📝 Mensaje específico
+                  // Mensaje específico
                   Text(
                     mensaje,
                     textAlign: TextAlign.center,
@@ -555,7 +589,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 12),
 
-                  // 💡 Sugerencia
+                  // Sugerencia
                   const Text(
                     'Este vehículo no tiene cargas extraordinarias pendientes para hoy.',
                     textAlign: TextAlign.center,
@@ -563,7 +597,7 @@ class _PagInicioState extends State<PagInicio> {
                   ),
                   const SizedBox(height: 24),
 
-                  // 🔘 Botón de regresar
+                  // Botón de regresar
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -624,10 +658,8 @@ class _PagInicioState extends State<PagInicio> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Cierra el diálogo de confirmación
-
               // Limpiar datos del conductor al cerrar sesión
               ConductorService.limpiarConductor();
-
               // Limpiar estado de validación local
               setState(() {
                 _credencialValidada = false;
@@ -697,7 +729,7 @@ class _PagInicioState extends State<PagInicio> {
                           height: 100,
                           fit: BoxFit.contain,
                         ),
-                        const SizedBox(height: 20), // 📏 Espacio vertical
+                        const SizedBox(height: 20), // Espacio vertical
 
                         const Text(
                           'Sistema de Combustible', // Nombre del sistema
@@ -711,7 +743,7 @@ class _PagInicioState extends State<PagInicio> {
                         const SizedBox(height: 15), // Espacio vertical
 
                         const Text(
-                          'Introducir número de serie', // Instrucción para el usuario
+                          'Bienvenido al sistema de combustibles, ten un buen día.', // Instrucción para el usuario
                           textAlign: TextAlign.center, // Texto centrado
                           style: TextStyle(
                             fontSize: 16,
@@ -935,141 +967,6 @@ class _PagInicioState extends State<PagInicio> {
     );
   }
 
-  // 🆕 Método para mostrar diálogo de búsqueda de vehículos con cargas de bidones
-  Future<void> _mostrarDialogoBuscarVehiculoBidones(
-    BuildContext context,
-  ) async {
-    // Crea controlador para el campo de texto del diálogo
-    final TextEditingController controller = TextEditingController();
-
-    // Muestra diálogo modal para ingresar número de serie
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            'Buscar Vehículo con Cargas de Bidones',
-            style: TextStyle(
-              color: Color(0xFF8B4513), // Color café para bidones
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Introduce los últimos 8 dígitos del número de serie:',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLength: 8,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Últimos 8 dígitos',
-                  hintText: 'Ej: A004352',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.inventory_2, color: Color(0xFF8B4513)),
-                  labelStyle: TextStyle(color: Color(0xFF8B4513)),
-                ),
-                autofocus: true,
-                inputFormatters: [UpperCaseTextFormatter()],
-              ),
-            ],
-          ),
-          actions: [
-            // Botón para cancelar la búsqueda
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cierra el diálogo
-              },
-              child: const Text('Cancelar'),
-            ),
-            // Botón para buscar el vehículo
-            ElevatedButton(
-              onPressed: () async {
-                final numSerie = controller.text.trim();
-                if (numSerie.length == 8) {
-                  Navigator.of(context).pop(); // Cierra el diálogo
-                  await _buscarVehiculoBidones(
-                    context,
-                    numSerie,
-                  ); // Busca con ruta de bidones
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Por favor, introduce 8 dígitos'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B4513),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Buscar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 🆕 Método para buscar vehículo con cargas de bidones
-  Future<void> _buscarVehiculoBidones(
-    BuildContext context,
-    String numSerie,
-  ) async {
-    try {
-      // 🆕 DEBUG: Mostrar URL específica de bidones
-      final url =
-          'https://combustibles.sspmichoacan.com/api/revisar-bidones/$numSerie';
-      print('🔍 DEBUG: URL de bidones: $url');
-
-      // 🆕 Llamar a API específica de bidones
-      final result = await LaravelApiService.getCargasBidones(numSerie);
-
-      // 🆕 DEBUG: Mostrar respuesta
-      print('🔍 DEBUG: Respuesta de bidones: $result');
-
-      // 🆕 Si hay respuesta, navegar a info_vehic con tipo bidones
-      if (result.isNotEmpty && result['id'] != null) {
-        // 🆕 Crear estructura de vehículo para bidones
-        final vehiculoData = {
-          'success': true,
-          'num_serie': numSerie,
-          'vehiculo': result['vehiculo'] ?? {},
-          'cargas': [result], // Envolver en lista
-          'message': 'Cargas de bidones encontradas',
-          'tipo_carga': 'bidones',
-        };
-
-        // 🆕 Navegar a info_vehic con datos de bidones
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => InfoVehic(
-              numeroSerie: numSerie,
-              datosVehiculo: vehiculoData['vehiculo'],
-              cargasDelVehiculo: vehiculoData['cargas'],
-              tipoCargaPreseleccionado: 'bidones',
-            ),
-          ),
-        );
-      } else {
-        _mostrarDialogoVehiculoNoEncontrado(
-          'No se encontraron cargas de bidones para este vehículo',
-        );
-      }
-    } catch (e) {
-      print('❌ Error al buscar vehículo con bidones: $e');
-      _mostrarDialogoVehiculoNoEncontrado(
-        'Error al buscar cargas de bidones: $e',
-      );
-    }
-  }
-
   // Método para mostrar diálogo de entrada de número de serie
   Future<void> _showInputDialog(
     BuildContext context, {
@@ -1107,7 +1004,7 @@ class _PagInicioState extends State<PagInicio> {
                     TextCapitalization.characters, // Fuerza mayúsculas
                 decoration: const InputDecoration(
                   labelText: 'Últimos 8 dígitos', // Etiqueta del campo
-                  hintText: 'Ej: A004352', // 💡 Ejemplo de formato
+                  hintText: 'Ej: A0043529', // Ejemplo de formato
                   border: OutlineInputBorder(), // Borde normal del campo
                   prefixIcon: Icon(
                     Icons.numbers,
@@ -1154,12 +1051,9 @@ class _PagInicioState extends State<PagInicio> {
                 try {
                   Map<String, dynamic> result;
 
-                  // 🔄 Seleccionar la API según el tipo de carga
+                  // Seleccionar la API según el tipo de carga
                   switch (tipoCarga) {
                     case 'extraordinaria':
-                      print(
-                        '🔍 Buscando cargas extraordinarias para: $numSerie',
-                      );
 
                       // 🆕 DEBUG: Mostrar URL exacta que se está llamando
                       final url =
@@ -1171,20 +1065,14 @@ class _PagInicioState extends State<PagInicio> {
                             numSerie,
                           );
 
-                      // 🆕 DEBUG: Mostrar respuesta completa de la API
-                      print(
-                        '🔍 DEBUG: Respuesta completa de API extraordinaria:',
-                      );
-                      print(
-                        '🔍 DEBUG: Tipo de respuesta: ${cargasExtraordinarias.runtimeType}',
-                      );
-                      print('🔍 DEBUG: Contenido: $cargasExtraordinarias');
+                      // =====================================================
+                      // Verificar si hay cargas extraordinarias
+                      // =====================================================
 
-                      // 🆕 Verificar si hay cargas extraordinarias
                       if (cargasExtraordinarias['success'] == true &&
                           cargasExtraordinarias['data'] != null &&
                           (cargasExtraordinarias['data'] as List).isNotEmpty) {
-                        // 🆕 Hay cargas, construir resultado normal
+                        // Hay cargas, construir resultado normal
                         // La API devuelve datos del vehículo + lista de cargas en 'data'
                         result = {
                           'success': true,
@@ -1196,7 +1084,7 @@ class _PagInicioState extends State<PagInicio> {
                           'message': 'Cargas extraordinarias encontradas',
                         };
                       } else {
-                        // 🆕 No hay cargas extraordinarias
+                        // No hay cargas extraordinarias
                         result = {
                           'success': false,
                           'num_serie': numSerie,
@@ -1208,9 +1096,8 @@ class _PagInicioState extends State<PagInicio> {
                       break;
 
                     case 'bidones':
-                      print('🔍 Buscando cargas de bidones para: $numSerie');
 
-                      // 🆕 DEBUG: Mostrar URL específica de bidones
+                      // DEBUG: Mostrar URL específica de bidones
                       final urlBidones =
                           'https://combustibles.sspmichoacan.com/api/revisar-bidones/$numSerie';
                       print('🔍 DEBUG: URL de API bidones: $urlBidones');
@@ -1218,20 +1105,10 @@ class _PagInicioState extends State<PagInicio> {
                       final datosBidones =
                           await LaravelApiService.getCargasBidones(numSerie);
 
-                      // 🆕 DEBUG: Mostrar respuesta completa de la API
-                      print('🔍 DEBUG: Respuesta completa de API bidones:');
-                      print(
-                        '🔍 DEBUG: Tipo de respuesta: ${datosBidones.runtimeType}',
-                      );
-                      print('🔍 DEBUG: Contenido: $datosBidones');
-
-                      // 🆕 MANEJO ESPECIAL PARA BIDONES - Nueva estructura completa
+                      // MANEJO ESPECIAL PARA BIDONES - Nueva estructura completa
                       if (datosBidones.containsKey('success') &&
                           datosBidones['success'] == false) {
-                        // 🆕 Caso: Vehículo encontrado pero sin bidones pendientes
-                        print(
-                          '✅ Vehículo encontrado pero sin bidones pendientes',
-                        );
+                        // Caso: Vehículo encontrado pero sin bidones pendientes
                         result = {
                           'success': true, // El vehículo existe
                           'num_serie': numSerie,
@@ -1245,8 +1122,7 @@ class _PagInicioState extends State<PagInicio> {
                           'sin_bidones': true, // Marcar especial
                         };
                       } else {
-                        // 🆕 Caso: Hay bidones disponibles - Nueva estructura completa
-                        print('✅ Bidones encontrados con nueva estructura');
+                        // Caso: Hay bidones disponibles - Nueva estructura completa
                         result = {
                           'success': true,
                           'num_serie': numSerie,
@@ -1261,7 +1137,7 @@ class _PagInicioState extends State<PagInicio> {
                       break;
 
                     default:
-                      // 🔄 Para cargas ordinarias, usar el método existente
+                      // Para cargas ordinarias, usar el método existente
                       result = await LaravelApiService.buscarVehiculo(numSerie);
                       break;
                   }
@@ -1276,13 +1152,6 @@ class _PagInicioState extends State<PagInicio> {
 
                     // Cierra el diálogo de búsqueda
                     Navigator.of(context).pop();
-
-                    // DEBUG: Verificar que el nombre se está pasando correctamente
-                    print(
-                      'DEBUG: pag_inicio - nombreConductor = $nombreConductor',
-                    );
-                    print('DEBUG: pag_inicio - tipoCarga = $tipoCarga');
-
                     // Navega a la página de información del vehículo
                     Navigator.push(
                       context, // Contexto actual de navegación
@@ -1308,7 +1177,7 @@ class _PagInicioState extends State<PagInicio> {
                       ),
                     );
                   } else if (result['sin_cargas'] == true) {
-                    // 🆕 Caso especial: Vehículo encontrado pero sin cargas extraordinarias
+                    // Caso especial: Vehículo encontrado pero sin cargas extraordinarias
                     _mostrarDialogoSinCargasExtraordinarias(result['message']);
                   } else {
                     // Vehículo no encontrado o error del servidor
@@ -1317,16 +1186,16 @@ class _PagInicioState extends State<PagInicio> {
                 } catch (e) {
                   // Si hay problemas de conexión o red, captura el error
 
-                  // 🔍 Verificar si es error de vehículo no encontrado
+                  // Verificar si es error de vehículo no encontrado
                   if (e.toString().contains('Vehículo no encontrado')) {
-                    // 🔴 Mostrar ventana emergente de vehículo no encontrado
+                    // Mostrar ventana emergente de vehículo no encontrado
                     _mostrarDialogoVehiculoNoEncontrado(
                       'El número de serie ingresado no existe en el sistema.',
                     );
                   } else {
-                    // 🔴 Mostrar SnackBar para otros errores de conexión
+                    // Mostrar SnackBar para otros errores de conexión
                     _mostrarMensaje(
-                      'Error de conexión: $e',
+                      'Error de conexión, verifica tu internet: $e',
                     ); // Muestra error específico de conexión
                   }
                 }
