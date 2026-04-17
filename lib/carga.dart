@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // 🆕 Para detectar plataforma
-import 'package:flutter/services.dart'; // 🆕 Para input formatters
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
-//import 'ticket.dart';
-import 'pag_inicio.dart'; // 🆕 Importar PagInicio para navegación
+import 'pag_inicio.dart';
 import 'services/laravel_api_service.dart';
 
-// =============================================================================
-// CLASE CARGA - Página para registrar cargas de combustible
-// =============================================================================
-// Función: Permite registrar cargas ordinarias y extraordinarias
-// Características: Implementa candado de carga diaria y validaciones
-// =============================================================================
-
-// 🆕 Formatter para convertir texto a mayúsculas
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -58,10 +49,6 @@ class Carga extends StatefulWidget {
   State<Carga> createState() => _CargaState();
 }
 
-// =============================================================================
-// ESTADO DE LA CLASE - Variables y controladores
-// =============================================================================
-
 class _CargaState extends State<Carga> {
   // Controladores de texto para inputs del formulario
   final TextEditingController _litrosCargadosController =
@@ -69,9 +56,9 @@ class _CargaState extends State<Carga> {
   final TextEditingController _precioCombustibleController =
       TextEditingController(); // Input para precio por litro
   final TextEditingController _personaQueCargaController =
-      TextEditingController(); // 🆕 Input para persona que realiza la carga
+      TextEditingController(); // Input para persona que realiza la carga
   final TextEditingController _kilometrajeController =
-      TextEditingController(); // 🆕 Input para kilometraje del vehículo
+      TextEditingController(); // Input para kilometraje del vehículo
 
   // Gestor de imágenes para capturar tickets
   final ImagePicker _imagePicker = ImagePicker(); // Selector de imágenes
@@ -90,59 +77,26 @@ class _CargaState extends State<Carga> {
   // VARIABLES PARA CANDADO DE CARGA DIARIA
   // ===========================================
   bool _verificandoCargaDiaria = false; // Estado: verificando si ya cargó hoy
-  bool _yaCargoOrdinariaHoy = false; // Resultado: ya cargó ordinaria hoy
-  Map<String, dynamic>?
-  _datosCargaAnterior; // Datos de la carga anterior encontrada
 
   // =============================================================================
   // INITSTATE - Inicialización del estado
-  // =============================================================================
-  // Función: Se ejecuta al crear la página
-  // Acciones: Inicia verificación de carga diaria si es ordinaria
   // =============================================================================
   @override
   void initState() {
     super.initState();
 
-    // 🔍 CORRECCIÓN: Asignar tipo de carga desde el widget
+    // CORRECCIÓN: Asignar tipo de carga desde el widget
     _tipoCarga = widget.tipoCargaPreseleccionado ?? 'ordinaria';
 
-    print('DEBUG: initState() - Tipo de carga asignado: $_tipoCarga');
-    print(
-      'DEBUG: widget.tipoCargaPreseleccionado: ${widget.tipoCargaPreseleccionado}',
-    );
-
     // Llenar automáticamente el campo del conductor si viene del QR validado
-    print('DEBUG: Verificando nombre del conductor...');
-    print(
-      'DEBUG: widget.nombreConductorValidado = ${widget.nombreConductorValidado}',
-    );
-    print(
-      'DEBUG: widget.tipoCargaPreseleccionado = ${widget.tipoCargaPreseleccionado}',
-    );
-
     if (widget.nombreConductorValidado != null &&
         widget.nombreConductorValidado!.isNotEmpty) {
       _personaQueCargaController.text = widget.nombreConductorValidado!;
-      print(
-        'DEBUG: Nombre del conductor validado asignado automáticamente: ${widget.nombreConductorValidado}',
-      );
-    } else {
-      print(
-        'DEBUG: Nombre del conductor es NULL o está vacío - No se asigna automáticamente',
-      );
     }
 
     // Si es carga ordinaria, verificar si ya cargó hoy (candado de seguridad)
     if (_tipoCarga == 'ordinaria') {
-      print(
-        'DEBUG: Es carga ordinaria - Iniciando verificación de carga diaria',
-      );
       _verificarSiYaCargoHoy();
-    } else {
-      print(
-        'DEBUG: No es carga ordinaria (${_tipoCarga}) - No se verifica carga diaria',
-      );
     }
 
     // Obtener precio del combustible al iniciar (solo si está montado)
@@ -154,13 +108,9 @@ class _CargaState extends State<Carga> {
   // =============================================================================
   // VERIFICACIÓN DE CARGA DIARIA - Candado con API /revisar-cargas/
   // =============================================================================
-  // Función: Verifica si el vehículo ya realizó carga ordinaria hoy
-  // API: /api/revisar-cargas/{numero_serie}
-  // Campo: 'realizado' (true = ya cargó, false = no ha cargado)
-  // Acción: Bloquea la carga si realizado es true
-  // =============================================================================
+
   Future<void> _verificarSiYaCargoHoy() async {
-    // 🆕 CORRECCIÓN: Validar que el widget esté montado antes de hacer setState
+    // CORRECCIÓN: Validar que el widget esté montado antes de hacer setState
     if (!mounted) return;
 
     setState(() {
@@ -168,53 +118,33 @@ class _CargaState extends State<Carga> {
     });
 
     try {
-      // 🆕 CAMBIO: Usar API /revisar-cargas/ para verificar campo 'realizado'
+      // CAMBIO: Usar API /revisar-cargas/ para verificar campo 'realizado'
       final resultado = await LaravelApiService.buscarVehiculo(
         widget.numeroSerie,
       );
 
-      // 🆕 CORRECCIÓN: Validar que el widget esté montado antes de hacer setState
+      // CORRECCIÓN: Validar que el widget esté montado antes de hacer setState
       if (!mounted) return;
 
       setState(() {
         _verificandoCargaDiaria = false; // Ocultar loading
       });
 
-      print('🔍 DEBUG: Respuesta completa del API: $resultado');
-      print('🔍 DEBUG: Success: ${resultado['success']}');
-      print('🔍 DEBUG: Campo realizado: ${resultado['realizado']}');
-
       if (resultado['success']) {
-        // 🆕 NUEVA LÓGICA: Usar campo 'realizado' de /revisar-cargas/
+        // NUEVA LÓGICA: Usar campo 'realizado' de /revisar-cargas/
         // CORRECCIÓN: Validar que el widget esté montado antes de hacer setState
         if (!mounted) return;
 
         setState(() {
-          _yaCargoOrdinariaHoy = resultado['realizado'] ?? false;
-          // 🗑️ Ya no necesitamos datos de carga anterior para esta validación
-          _datosCargaAnterior = null;
+          // Ya no necesitamos datos de carga anterior para esta validación
         });
-
-        print('🔍 DEBUG: ¿Ya cargó ORDINARIA hoy?: $_yaCargoOrdinariaHoy');
-        print(
-          '🔍 DEBUG: litros_autorizados disponible: ${widget.datosVehiculo?['litros_autorizados']}',
-        );
-        print(
-          '🔍 DEBUG: Validación usando campo realizado de /revisar-cargas/',
-        );
-        print(
-          '🔍 DEBUG: 🚨 Si realizado=true, litros_autorizados desaparece (comportamiento esperado)',
-        );
       }
     } catch (e) {
-      print('🔍 DEBUG: Error en verificación: $e');
-      // Error en la verificación - Permitir carga por seguridad
       // CORRECCIÓN: Validar que el widget esté montado antes de hacer setState
       if (!mounted) return;
 
       setState(() {
         _verificandoCargaDiaria = false;
-        _yaCargoOrdinariaHoy = false;
       });
     }
   }
@@ -223,81 +153,27 @@ class _CargaState extends State<Carga> {
   // FUNCIÓN ESPECÍFICA PARA EXTRAER ID DE CARGA ASIGNADA DE BIDONES
   // =============================================================================
   Future<String> _extraerIdCargaAsignadaBidones() async {
-    print('DEBUG: Buscando id_carga_asignada para bidones');
-    print('DEBUG: widget.cargasDelVehiculo: ${widget.cargasDelVehiculo}');
-
     if (widget.cargasDelVehiculo != null &&
         widget.cargasDelVehiculo!.isNotEmpty) {
       final primerBidon = widget.cargasDelVehiculo!.first;
-      print('DEBUG: primerBidon completo: $primerBidon');
-      print('DEBUG: Keys del primerBidon: ${primerBidon.keys.toList()}');
-      print('DEBUG: Valores de cada campo:');
-      primerBidon.forEach((key, value) {
-        print('  - $key: $value (${value.runtimeType})');
-      });
+      primerBidon.forEach((key, value) {});
 
       final idBidon = primerBidon['id'];
-      print('DEBUG: idBidon extraído: $idBidon');
-      print('DEBUG: Tipo de idBidon: ${idBidon.runtimeType}');
 
       if (idBidon != null) {
         // SOLUCIÓN CORRECTA: Usar el ID real del bidón que viene del GET
         // El campo 'id' ahora contiene el valor de 'id_carga_bidon' del GET
         final idCargaAsignada = idBidon.toString();
-        print('DEBUG: ID de bidón para POST (ID real): $idCargaAsignada');
-        print('DEBUG: ID original del bidón (para referencia): $idBidon');
-        print('DEBUG: Estructura completa del bidón: $primerBidon');
-        print(
-          'DEBUG: Campos disponibles en bidón: ${primerBidon.keys.toList()}',
-        );
+
         return idCargaAsignada;
       } else {
-        print('DEBUG: ID de bidón no encontrado o es null');
         _mostrarErrorBidonesSinID();
         return 'ERROR';
       }
     } else {
-      print('DEBUG: No hay bidones disponibles');
       _mostrarErrorSinBidonesDisponibles();
       return 'ERROR';
     }
-  }
-
-  // =============================================================================
-  // FUNCIONES ESPECÍFICAS PARA MANEJO DE ERRORES DE BIDONES
-  // =============================================================================
-
-  // Muestra error cuando no hay bidones válidos disponibles
-  void _mostrarErrorBidonesInvalidos() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          '❌ No hay bidones válidos disponibles para este vehículo',
-        ),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  // Muestra error cuando el ID del bidón no existe en el servidor
-  void _mostrarErrorBidonNoExiste(String idBidon) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '❌ El ID de bidón ($idBidon) no existe en el servidor\n💡 Contacte al administrador para sincronizar los datos',
-        ),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'Entendido',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
-      ),
-    );
   }
 
   // Muestra error cuando los bidones no tienen ID válido
@@ -325,260 +201,11 @@ class _CargaState extends State<Carga> {
   }
 
   // =============================================================================
-  // UI DE CANDADO - Pantalla cuando ya cargó ordinaria hoy
-  // =============================================================================
-  // Función: Muestra UI de bloqueo con información de la carga anterior
-  // Acción: Informa al usuario y muestra detalles de la carga del día
-  // =============================================================================
-  Widget _mostrarUICandadoCargaDiaria() {
-    final datosCarga = _datosCargaAnterior;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Carga - ${widget.numeroSerie}'),
-        backgroundColor: const Color(0xFF0A2E5C),
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-            color: Colors.orange[50],
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-              side: BorderSide(color: Colors.orange[300]!, width: 2),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.block, size: 80, color: Colors.orange),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'CARGA ORDINARIA BLOQUEADA',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    'Este vehículo ya realizó una carga ORDINARIA hoy',
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Número de serie: ${widget.numeroSerie}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  // Mostrar datos de la carga anterior si existen
-                  if (datosCarga != null) ...[
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Última carga ORDINARIA registrada hoy:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          if (datosCarga['created_at'] != null)
-                            Text(
-                              'Hora: ${_formatearHora(datosCarga['created_at'])}',
-                            ),
-                          if (datosCarga['litros_cargados'] != null)
-                            Text('Litros: ${datosCarga['litros_cargados']}'),
-                          if (datosCarga['importe_cargado'] != null)
-                            Text('Importe: \$${datosCarga['importe_cargado']}'),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Regresar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0A2E5C),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 15,
-                        horizontal: 30,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // =============================================================================
-  // FORMATEAR HORA - Helper para mostrar hora de carga anterior
-  // =============================================================================
-  // Función: Convierte timestamp a formato HH:MM
-  // Uso: Muestra hora de la carga ordinaria anterior
-  // =============================================================================
-  String _formatearHora(String fechaString) {
-    try {
-      final fecha = DateTime.parse(fechaString);
-      return '${fecha.hour.toString().padLeft(2, '0')}:${fecha.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return 'Hora no disponible';
-    }
-  }
-
-  // =============================================================================
-  // UI DE RESTRICCIÓN EXTRAORDINARIA - Bloqueo sin asignación
-  // =============================================================================
-  // Función: Muestra UI cuando no hay cargas extraordinarias asignadas
-  // Condición: Solo se muestra para tipo 'extraordinaria' sin registros
-  // Acción: Informa que solo tiene cargas ordinarias disponibles
-  // =============================================================================
-  Widget _mostrarUIRestriccionExtraordinaria() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Carga de Vehículo'),
-        backgroundColor: const Color(0xFF0A2E5C),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(60),
-                child: Image.asset(
-                  'assets/images/Estrella.png',
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.local_gas_station,
-                      size: 60,
-                      color: Color(0xFF0A2E5C),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            Card(
-              color: Colors.orange[400],
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.warning_amber,
-                      size: 40,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Carga Extraordinaria No Asignada',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'No se tiene una carga extraordinaria asignada para el vehículo ${widget.numeroSerie}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      'A pesar de que tiene carga ordinaria disponible',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Regresar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange[600],
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 15,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =============================================================================
   // BUILD - Método principal de construcción de UI
   // =============================================================================
-  // Función: Construye la interfaz basada en el estado actual
-  // Flujo: 1) Loading → 2) Candado → 3) Validaciones → 4) UI normal
-  // Prioridades: Seguridad primero, luego funcionalidad
-  // =============================================================================
+
   @override
   Widget build(BuildContext context) {
-    // ===========================================
-    // PASO 1: VERIFICACIÓN INICIAL - Loading de carga diaria
-    // ===========================================
     // Si está verificando si ya cargó hoy, mostrar loading
     if (_verificandoCargaDiaria) {
       return Scaffold(
@@ -598,24 +225,6 @@ class _CargaState extends State<Carga> {
           ),
         ),
       );
-    }
-
-    // ===========================================
-    // PASO 2: CANDADO DE CARGA DIARIA - Bloqueo por seguridad
-    // ===========================================
-    // Si ya cargó ordinaria hoy, mostrar UI de bloqueo
-    if (_yaCargoOrdinariaHoy && _tipoCarga == 'ordinaria') {
-      return _mostrarUICandadoCargaDiaria();
-    }
-
-    // ===========================================
-    // PASO 3: VALIDACIÓN DE EXTRAORDINARIA - Sin asignación
-    // ===========================================
-    // Si es extraordinaria pero no tiene asignaciones, bloquear
-    if (widget.tipoCargaPreseleccionado == 'extraordinaria' &&
-        (widget.cargasDelVehiculo == null ||
-            widget.cargasDelVehiculo!.isEmpty)) {
-      return _mostrarUIRestriccionExtraordinaria();
     }
 
     // ===========================================

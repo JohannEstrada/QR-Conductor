@@ -14,46 +14,32 @@ class LaravelApiService {
       '$_baseUrl/login'; // Endpoint específico para login
 
   // ============================================================
-  // MÉTODO DE LOGIN - Autenticación de usuarios
-  // Propósito: Validar credenciales y obtener token de acceso
-  // Parámetros: email (correo), password (contraseña)
-  // Retorna: Map con éxito/fracaso y datos del usuario
-  // ============================================================
+  // MÉTODO DE LOGIN - Autenticación de usuarios, Valida credenciales y obtener token de acceso
   static Future<Map<String, dynamic>> login(
     String email, // Correo electrónico del usuario
     String password, // Contraseña del usuario
   ) async {
     try {
-      // Logs para depuración - mostrar intento de conexión
-      print('🔐 Conectando con Laravel API...');
-      print('📧 Email: $email');
-
-      // 🌐 Petición POST al servidor para autenticación
+      // Petición POST al servidor para autenticación
       final response = await http
           .post(
-            Uri.parse(_loginUrl), // 🔗 URL del endpoint de login
+            Uri.parse(_loginUrl), // URL del endpoint de login
             headers: {
-              'Content-Type': 'application/json', // 📄 Indica que enviamos JSON
-              'Accept': 'application/json', // 📄 Esperamos respuesta JSON
-              'User-Agent': 'Flutter-App', // 📱 Identificar cliente
+              'Content-Type': 'application/json', // Indica que enviamos JSON
+              'Accept': 'application/json', // Esperamos respuesta JSON
+              'User-Agent': 'Flutter-App', // Identificar cliente
             },
             body: jsonEncode({
               'email': email,
               'password': password,
-            }), // 📦 Credenciales en formato JSON
+            }), // Credenciales en formato JSON
           )
           .timeout(
-            const Duration(seconds: 3), // ⏰ Timeout de 30 segundos
+            const Duration(seconds: 3), // Timeout de 3 segundos
             onTimeout: () {
               throw Exception('Timeout: La conexión tardó demasiado tiempo');
             },
           );
-
-      // Logs para depuración - mostrar respuesta del servidor
-      print(
-        '📊 Status code: ${response.statusCode}',
-      ); // Código HTTP (200=éxito)
-      print('📋 Response body: ${response.body}'); // Contenido de la respuesta
 
       // Verificar si la petición fue exitosa (código 200)
       if (response.statusCode == 200) {
@@ -63,13 +49,6 @@ class LaravelApiService {
         _token = data['token']; // Guardar token JWT para autenticación
         _idUsuario = data['user']['id']
             .toString(); // Guardar ID del usuario como texto
-
-        // Logs de éxito - mostrar credenciales guardadas
-        print('✅ Login exitoso');
-        print(
-          '🔑 Token: ${_token?.substring(0, 20)}...',
-        ); // Primeros 20 caracteres del token
-        print('🆔 ID Usuario: $_idUsuario'); // Mostrar ID guardado
 
         // Retornar respuesta exitosa con datos del usuario
         return {
@@ -86,8 +65,6 @@ class LaravelApiService {
                 'message': 'Credenciales incorrectas',
               } // Usuario/contraseña inválidos
             : jsonDecode(response.body); // Otro error del servidor
-
-        print('❌ Error en login: ${errorData['message']}');
 
         return {
           'success': false, // Indica que el login falló
@@ -127,11 +104,6 @@ class LaravelApiService {
 
   // ============================================================
   // MÉTODO PARA OBTENER DATOS DEL USUARIO
-  // Propósito: Obtener información del perfil del usuario logueado
-  // Parámetros: Ninguno (usa token guardado)
-  // Retorna: Map con datos del usuario
-  // ============================================================
-
   // Obtener datos del usuario (opcional)
   static Future<Map<String, dynamic>> getUserData() async {
     if (_token == null) {
@@ -163,52 +135,33 @@ class LaravelApiService {
   }
 
   // ============================================================
-  // MÉTODO DE LOGOUT - Cerrar sesión del usuario
-  // Propósito: Limpiar credenciales y terminar sesión
-  // Parámetros: Ninguno
-  // Retorna: Vacío (void)
-  // ============================================================
+  // MÉTODO DE LOGOUT - Cerrar sesión del usuario, limpia credenciales y termina sesión
   static void logout() {
     _token = null; // Eliminar token de autenticación
     _idUsuario = null; // Limpiar ID también
-    print('👋 Sesión cerrada - Token eliminado'); // Log de cierre de sesión
-    print('🆔 ID Usuario eliminado'); // Log de ID eliminado
   }
 
   // ============================================================
   // MÉTODO DE BÚSQUEDA DE VEHÍCULOS
-  // Propósito: Buscar vehículos por número de serie (últimos 8 dígitos)
-  // Parámetros: numSerie (últimos 8 dígitos del número de serie)
-  // Retorna: Map con datos del vehículo y sus cargas asociadas
-  // ============================================================
   static Future<Map<String, dynamic>> buscarVehiculo(String numSerie) async {
     if (_token == null) {
       throw Exception('No hay token activo - Inicia sesión primero');
     }
 
     try {
-      print('🔍 Buscando vehículo con num_serie: $numSerie');
-      print('📏 Longitud del input: ${numSerie.length} caracteres');
-      print('🔑 Usando token: ${_token?.substring(0, 20)}...');
-
-      // 🧠 LÓGICA INTELIGENTE: Detectar si son 8 dígitos (últimos dígitos) o número completo
+      // LÓGICA INTELIGENTE: Detectar si son 8 dígitos (últimos dígitos) o número completo
       String endpointUrl;
       String tipoBusqueda;
 
       if (numSerie.length == 8) {
-        // 🎯 Son 8 dígitos: usar nueva ruta con filtro por día
+        // Son 8 dígitos: usar nueva ruta con filtro por día
         endpointUrl =
             '$_baseUrl/revisar-cargas/$numSerie'; // 🔗 Nueva ruta con filtro diario
         tipoBusqueda = 'por últimos 8 dígitos (con filtro de día)';
-        print('🎯 Modo de búsqueda: $tipoBusqueda');
-        print(
-          '🔍 Usando nueva ruta /revisar-cargas/ con filtro automático por día',
-        );
       } else {
-        // 🎯 Es número completo: búsqueda exacta
+        // Es número completo: búsqueda exacta
         endpointUrl = '$_baseUrl/cargas/$numSerie';
         tipoBusqueda = 'por número completo (exacta)';
-        print('🎯 Modo de búsqueda: $tipoBusqueda');
       }
 
       final response = await http.get(
@@ -220,36 +173,15 @@ class LaravelApiService {
         },
       );
 
-      print('📊 Status code: ${response.statusCode}');
-      print('📋 Response body: ${response.body}');
-      print(
-        '🔍 Headers enviados: Authorization: Bearer ${_token?.substring(0, 20)}...',
-      );
-
       // DEPURACIÓN: Mostrar estructura exacta
-      print('=== DEPURACIÓN DE ESTRUCTURA ===');
       try {
         final data = jsonDecode(response.body);
-        print('Tipo de datos: ${data.runtimeType}');
-        print('¿Es List? ${data is List}');
-        print('¿Es Map? ${data is Map}');
-
         if (data is List) {
           final lista = data as List;
-          print('Longitud de lista: ${lista.length}');
-          if (lista.isNotEmpty) {
-            print('Primer elemento: ${lista[0]}');
-            print(
-              'Keys del primer elemento: ${(lista[0] as Map).keys.toList()}',
-            );
-          }
+          if (lista.isNotEmpty) {}
         } else if (data is Map) {
           final mapa = data as Map;
-          print('Keys del mapa: ${mapa.keys.toList()}');
-          print('¿Tiene "success"? ${mapa.containsKey('success')}');
-          print('¿Tiene "data"? ${mapa.containsKey('data')}');
         }
-        print('=== FIN DEPURACIÓN ===');
       } catch (e) {
         print('Error en depuración: $e');
       }
@@ -257,27 +189,13 @@ class LaravelApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // 🔍 DEPURACIÓN: Mostrar estructura exacta de la respuesta
-        print('=== DEPURACIÓN DE RESPUESTA API ===');
-        print('Tipo de datos: ${data.runtimeType}');
-        print('Respuesta completa: $data');
-
-        // 🆕 Con la nueva ruta /revisar-cargas/, el servidor ya filtra por día
         // La respuesta debe venir directamente como un mapa con datos del vehículo
         if (data is Map &&
             (data['success'] == true || data['success'] == 'true')) {
-          // ✅ La API ya filtró por día y encontró el vehículo
-          print('✅ Vehículo encontrado con filtro de día aplicado');
-          print('🔍 Datos del vehículo: ${data['vehiculo']}');
-          print('🔍 Keys disponibles: ${data.keys.toList()}');
+          // La API ya filtró por día y encontró el vehículo
 
-          // 📋 Verificar que existan los campos necesarios
+          // Verificar que existan los campos necesarios
           final vehiculo = data['vehiculo'] ?? data;
-          print('🔍 Keys del vehículo: ${vehiculo.keys.toList()}');
-          print('🔍 Conductor: ${vehiculo['conductor']}');
-          print('🔍 Placa: ${vehiculo['placa']}');
-          print('🔍 Num económico: ${vehiculo['num_economico']}');
-          print('🔍 Tipo combustible: ${vehiculo['tipo_combustible']}');
 
           return {
             'success': true,
@@ -291,9 +209,8 @@ class LaravelApiService {
             'message': 'Vehículo encontrado con combustible autorizado hoy',
           };
         } else if (data is Map) {
-          // ❌ La API no encontró vehículo o no tiene combustible hoy
-          print('❌ Vehículo no encontrado o sin combustible hoy');
-          print('🔍 Respuesta: $data');
+          // La API no encontró vehículo o no tiene combustible hoy
+
           return {
             'success': false,
             'message':
@@ -301,13 +218,11 @@ class LaravelApiService {
                 'Vehículo no encontrado o sin combustible autorizado para hoy',
           };
         } else {
-          // 📦 Si viene como lista (procesamiento antiguo)
-          print('⚠️ La API devolvió lista, procesando con lógica antigua');
+          // Si viene como lista (procesamiento antiguo)
           final cargas = data as List;
 
           if (cargas.isNotEmpty) {
             final primerResultado = cargas.first as Map<String, dynamic>;
-            print('🔍 Primer resultado: $primerResultado');
             return {
               'success': true,
               'num_serie': numSerie,
@@ -326,20 +241,19 @@ class LaravelApiService {
           }
         }
       } else if (response.statusCode == 401) {
-        print('Token expirado o inválido');
+        //iNICIO DE SESIÓN INVÁLIDO
         return {
           'success': false,
           'message': 'Token expirado - Inicia sesión nuevamente',
         };
       } else {
-        print('Error en la petición: ${response.statusCode}');
         return {
           'success': false,
           'message': 'Error al conectar con el servidor',
         };
       }
     } catch (e) {
-      print('Error de conexión: $e');
+      //Error de conexión
       return {
         'success': false,
         'message': 'No se pudo conectar con el servidor',
@@ -347,7 +261,7 @@ class LaravelApiService {
     }
   }
 
-  // 🆕 Obtener cargas extraordinarias de un vehículo
+  // Obtener cargas extraordinarias de un vehículo
   static Future<Map<String, dynamic>> getCargasExtraordinarias(
     String numeroSerie,
   ) async {
@@ -356,13 +270,7 @@ class LaravelApiService {
     }
 
     try {
-      print('🔍 Buscando cargas extraordinarias para vehículo: $numeroSerie');
-      print('🔍 URL: $_baseUrl/cargas-extraordinarias/$numeroSerie');
-      print(
-        '🔍 Headers enviados: Authorization: Bearer ${_token?.substring(0, 20)}...',
-      );
-
-      // 📥 Obtener cargas extraordinarias del servidor
+      // Obtener cargas extraordinarias del servidor
       final response = await http.get(
         Uri.parse('$_baseUrl/cargas-extraordinarias/$numeroSerie'),
         headers: {
@@ -372,52 +280,42 @@ class LaravelApiService {
         },
       );
 
-      print('🔍 Status code: ${response.statusCode}');
-      print('🔍 Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('✅ Cargas extraordinarias encontradas: $data');
 
-        // 🔍 Retornar la estructura completa: datos del vehículo + lista de cargas
+        // Retornar la estructura completa: datos del vehículo + lista de cargas
         return data as Map<String, dynamic>;
       } else if (response.statusCode == 404) {
-        // 🔍 Manejar caso 404 - Diferenciar entre vehículo no encontrado y sin cargas
+        // Manejar caso 404 - Diferenciar entre vehículo no encontrado y sin cargas
         final responseData = jsonDecode(response.body);
-        print('🔍 404 Response: $responseData');
 
         if (responseData['message']?.toString().contains(
               'No hay cargas extraordinarias',
             ) ==
             true) {
-          // 🟢 Caso normal: Vehículo existe pero no tiene cargas extraordinarias
-          print('✅ Vehículo sin cargas extraordinarias pendientes');
+          // Caso normal: Vehículo existe pero no tiene cargas extraordinarias
+
           return {
             'success': false,
             'message': 'No hay cargas extraordinarias pendientes',
           };
         } else {
-          // 🔴 Caso error: Vehículo no encontrado
-          print('❌ Vehículo no encontrado');
+          // Caso error: Vehículo no encontrado
+
           throw Exception('Vehículo no encontrado');
         }
       } else {
-        print('❌ Error al obtener cargas extraordinarias: ${response.body}');
         throw Exception(
           'Error al obtener cargas extraordinarias: ${response.statusCode}',
         );
       }
     } catch (e) {
-      print('❌ Error de conexión al obtener cargas extraordinarias: $e');
-
-      // 🔍 Si es error de vehículo no encontrado, propagar la excepción sin mostrar mensaje
+      // Si es error de vehículo no encontrado, propagar la excepción sin mostrar mensaje
       if (e.toString().contains('Vehículo no encontrado')) {
-        print('🔴 Propagando error de vehículo no encontrado');
         throw Exception('Vehículo no encontrado');
       }
 
-      // 🔍 Para otros errores, retornar mapa vacío
-      print('🟢 Error general, retornando mapa vacío');
+      // Para otros errores, retornar mapa vacío
       return {
         'success': false,
         'message': 'Error al obtener cargas extraordinarias',
@@ -425,7 +323,7 @@ class LaravelApiService {
     }
   }
 
-  // 🆕 Método para obtener cargas de bidones
+  // Método para obtener cargas de bidones
   static Future<Map<String, dynamic>> getCargasBidones(
     String numeroSerie,
   ) async {
@@ -434,12 +332,7 @@ class LaravelApiService {
     }
 
     try {
-      print('🔍 Buscando cargas de bidones para vehículo: $numeroSerie');
       final url = '$_baseUrl/revisar-bidones/$numeroSerie';
-      print('🔍 URL: $url');
-      print(
-        '🔍 Headers enviados: Authorization: Bearer ${_token?.substring(0, 20)}...',
-      );
 
       final response = await http.get(
         Uri.parse(url),
@@ -450,49 +343,18 @@ class LaravelApiService {
         },
       );
 
-      print('🔍 Status code: ${response.statusCode}');
-      print('🔍 Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('Cargas de bidones encontradas: $data');
 
-        // 🔍 DEBUG: Analizar la respuesta completa
-        print('🔍 DEBUG: Tipo de data: ${data.runtimeType}');
-        print(
-          '🔍 DEBUG: Keys en data: ${data is Map ? (data as Map).keys.toList() : 'No es mapa'}',
-        );
-        print('🔍 DEBUG: Valor de combustible: ${data['combustible']}');
-        print(
-          '🔍 DEBUG: ¿Hay campo tipo_combustible?: ${data.containsKey('tipo_combustible')}',
-        );
-        print(
-          '🔍 DEBUG: Valor de tipo_combustible: ${data['tipo_combustible']}',
-        );
-
-        // 🆕 El API retorna una lista de bidones dentro de "data"
+        // El API retorna una lista de bidones dentro de "data"
         if (data['data'] != null) {
           final bidonesList = data['data'] as List<dynamic>;
 
-          // 🆕 Retornar la estructura completa del vehículo con sus bidones
+          // Retornar la estructura completa del vehículo con sus bidones
           if (bidonesList.isNotEmpty) {
-            print('✅ Bidones encontrados: ${bidonesList.length}');
-
-            // 🔍 DEBUG: Analizar el primer bidón
             final primerBidon = bidonesList.first;
-            print('🔍 DEBUG: Primer bidón: $primerBidon');
-            print(
-              '🔍 DEBUG: Keys del primer bidón: ${primerBidon is Map ? (primerBidon as Map).keys.toList() : 'No es mapa'}',
-            );
-            print(
-              '🔍 DEBUG: Combustible en primer bidón: ${primerBidon['combustible']}',
-            );
-            print(
-              '🔍 DEBUG: Tipo_combustible en primer bidón: ${primerBidon['tipo_combustible']}',
-            );
-            print('🔍 DEBUG: Litros en primer bidón: ${primerBidon['litros']}');
 
-            // 🆕 Construir estructura completa del vehículo con bidones
+            // Construir estructura completa del vehículo con bidones
             final vehiculoConBidones = {
               'success': data['success'] ?? true,
               'num_serie': data['num_serie'],
@@ -505,22 +367,18 @@ class LaravelApiService {
                   primerBidon['combustible'] ??
                   primerBidon['tipo_combustible'] ??
                   data['combustible'] ??
-                  data['tipo_combustible'], // 🔍 INTENTAR OBTENER DE VARIOS LUGARES
+                  data['tipo_combustible'], // INTENTAR OBTENER DE VARIOS LUGARES
               'litros':
-                  primerBidon['litros'], // 🆕 AGREGAR CAMPO LITROS DEL PRIMER BIDÓN
+                  primerBidon['litros'], // AGREGAR CAMPO LITROS DEL PRIMER BIDÓN
               'id_carga_bidon':
-                  primerBidon['id_carga_bidon'], // 🔧 CORREGIDO: 'id_carga_bidon' como clave
+                  primerBidon['id_carga_bidon'], // CORREGIDO: 'id_carga_bidon' como clave
               'id_vehiculo':
-                  primerBidon['id_vehiculo'], // 🆕 AGREGAR ID DEL VEHÍCULO
+                  primerBidon['id_vehiculo'], // AGREGAR ID DEL VEHÍCULO
             };
 
-            print(
-              '✅ Estructura completa del vehículo con bidones: $vehiculoConBidones',
-            );
             return vehiculoConBidones;
           } else {
-            print('⚠️ No se encontraron bidones para este vehículo');
-            // 🆕 RETORNAR ESTRUCTURA ESPECIAL PARA VEHÍCULO SIN BIDONES
+            // RETORNAR ESTRUCTURA ESPECIAL PARA VEHÍCULO SIN BIDONES
             return {
               'success': false,
               'message': 'Este vehículo no tiene cargas de bidones asignadas',
@@ -541,33 +399,27 @@ class LaravelApiService {
           // Si viene como mapa directo (fallback)
           return data as Map<String, dynamic>;
         } else {
-          print('⚠️ Formato de respuesta no reconocido');
           throw Exception('Formato de respuesta no reconocido');
         }
       } else {
-        print('❌ Error al obtener cargas de bidones: ${response.body}');
-
-        // 🆕 MANEJO ESPECIAL PARA BIDONES - 404 puede tener datos válidos
+        // MANEJO ESPECIAL PARA BIDONES - 404 puede tener datos válidos
         if (response.statusCode == 404) {
           try {
             final responseData = jsonDecode(response.body);
-            print('🔍 DEBUG: Respuesta 404 de bidones: $responseData');
 
-            // 🆕 Si el 404 contiene success: false, manejar según el mensaje
+            // Si el 404 contiene success: false, manejar según el mensaje
             if (responseData.containsKey('success') &&
                 responseData['success'] == false) {
-              // 🆕 Diferenciar entre vehículo no encontrado y sin bidones
+              // Diferenciar entre vehículo no encontrado y sin bidones
               final mensaje =
                   responseData['message']?.toString().toLowerCase() ?? '';
 
               if (mensaje.contains('vehículo no encontrado') ||
                   mensaje.contains('vehiculo no encontrado')) {
-                // 🔴 Vehículo NO existe - propagar error para que lo maneje el UI
-                print('❌ Vehículo no encontrado (validado por mensaje)');
+                // Vehículo NO existe - propagar error para que lo maneje el UI
                 throw Exception('Vehículo no encontrado');
               } else {
-                // 🟡 Vehículo existe pero sin bidones pendientes
-                print('✅ Vehículo encontrado pero sin bidones pendientes');
+                // Vehículo existe pero sin bidones pendientes
                 return {
                   'success': false,
                   'message':
@@ -579,8 +431,7 @@ class LaravelApiService {
               }
             }
           } catch (e) {
-            print('❌ Error al procesar respuesta 404: $e');
-            // 🆕 Si es nuestra excepción de vehículo no encontrado, propagarla
+            // Si es nuestra excepción de vehículo no encontrado, propagarla
             if (e.toString().contains('Vehículo no encontrado')) {
               rethrow; // 🚀 Propagar la excepción hacia arriba
             }
@@ -592,20 +443,18 @@ class LaravelApiService {
         );
       }
     } catch (e) {
-      print('❌ Error de conexión al obtener cargas de bidones: $e');
       throw Exception('Error de conexión: $e');
     }
   }
 
-  // 🆕 Insertar carga completada (nueva funcionalidad)
+  // Insertar carga completada (nueva funcionalidad)
   // ========================================================================
-  // � FUNCIÓN PARA VERIFICAR SI UN ID DE CARGA ASIGNADA EXISTE
+
   static Future<bool> verificarExistenciaCargaAsignada(String idCarga) async {
     if (_token == null) return false;
 
     try {
       final url = '$_baseUrl/cargas-asignadas/$idCarga';
-      print('🔍 Verificando existencia de carga asignada ID: $idCarga');
 
       final response = await http.get(
         Uri.parse(url),
@@ -616,34 +465,29 @@ class LaravelApiService {
         },
       );
 
-      print('🔍 Status code verificación: ${response.statusCode}');
-      print('🔍 Response body verificación: ${response.body}');
-
       return response.statusCode == 200;
     } catch (e) {
-      print('🔍 Error verificando carga asignada: $e');
       return false;
     }
   }
 
-  // �� FUNCIÓN PRINCIPAL: Esta función envía el POST al servidor Laravel
+  // FUNCIÓN PRINCIPAL: Esta función envía el POST al servidor Laravel
   // ========================================================================
   // Aquí recibimos todos los datos desde carga.dart y los preparamos para enviar
   static Future<Map<String, dynamic>> insertarCargaCompletada({
-    required String idVehiculo, // 🚗 ID del vehículo en la base de datos
-    required String litrosCargados, // ⛽ Cantidad de litros cargados
-    required double importeCargado, // 💰 Costo total de la carga
-    required String numSerie, // 🔍 Número de serie del vehículo
-    required String tipoCarga, // 🆕 Tipo de carga (ordinaria/extraordinaria)
+    required String idVehiculo, // ID del vehículo en la base de datos
+    required String litrosCargados, // Cantidad de litros cargados
+    required double importeCargado, // Costo total de la carga
+    required String numSerie, // Número de serie del vehículo
+    required String tipoCarga, // Tipo de carga (ordinaria/extraordinaria)
+    required String idCargaAsignada, // ID de la carga asignada (de /api/cargas)
+    required String imagenTicket, // Imagen del ticket en base64
     required String
-    idCargaAsignada, // 🆕 ID de la carga asignada (de /api/cargas)
-    required String imagenTicket, // 🆕 Imagen del ticket en base64
-    required String
-    nombre_conductor, // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
-    required String odometro, // 🆕 KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
+    nombre_conductor, // NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
+    required String odometro, // KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO
   }) async {
     // ========================================================================
-    // 🔐 VERIFICACIÓN: Asegurarnos que tenemos token y usuario
+    // VERIFICACIÓN: Asegurarnos que tenemos token y usuario
     // ========================================================================
     if (_token == null) {
       throw Exception('No hay token activo - Inicia sesión primero');

@@ -87,7 +87,6 @@ class _InfoVehicState extends State<InfoVehic> {
       context: context,
       barrierDismissible: false, // No cerrar al tocar fuera
       builder: (context) {
-        print('🔍 DEBUG: Construyendo AlertDialog');
         return AlertDialog(
           backgroundColor: const Color(0xFFF5F5F5),
           shape: RoundedRectangleBorder(
@@ -103,7 +102,7 @@ class _InfoVehicState extends State<InfoVehic> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 🎯 Icono de documento vacío
+                // Icono de documento vacío
                 Container(
                   width: 80,
                   height: 80,
@@ -120,7 +119,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
                 const SizedBox(height: 20),
 
-                // 📋 Título
+                // Título
                 const Text(
                   'Sin Cargas Extraordinarias',
                   textAlign: TextAlign.center,
@@ -133,7 +132,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
                 const SizedBox(height: 16),
 
-                // 📝 Mensaje principal
+                // Mensaje principal
                 const Text(
                   'Este vehículo no tiene cargas extraordinarias asignadas.',
                   textAlign: TextAlign.center,
@@ -142,7 +141,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
                 const SizedBox(height: 24),
 
-                // 🚀 Botón de regreso
+                // Botón de regreso
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -180,51 +179,47 @@ class _InfoVehicState extends State<InfoVehic> {
         );
       },
     );
-    print('🔍 DEBUG: showDialog llamado exitosamente');
   }
 
   // =============================================================================
-  // MÉTODO AUXILIAR: Obtener color según estatus del vehículo
+  // MÉTODO AUXILIAR: color del estatus del vehículo
   // =============================================================================
-  // Función: Asignar color visual según el estatus del vehículo
-  // Retorna: Color (verde para activo/taller, rojo para inactivo/baja)
-  // Lógica: Switch case con estatus en minúsculas
-  // =============================================================================
+
   Color _getColorEstatus() {
-    // 📊 Extraer estatus y convertir a minúsculas para comparación
+    // Extraer estatus y convertir a minúsculas para comparación
     final estatus = widget.datosVehiculo?['estatus']?.toString().toLowerCase();
 
-    // 🎨 Asignar color según estatus
+    // Asignar color según estatus
     switch (estatus) {
-      case 'activo': // ✅ Vehículo operativo
-      case 'taller': // 🛠️ Vehículo en mantenimiento (pero autorizado)
+      case 'activo': // Vehículo operativo
+      case 'taller': // Vehículo en mantenimiento (pero autorizado)
         return Colors.green; // Verde = autorizado
 
-      case 'inactivo': // ❌ Vehículo no operativo
-      case 'baja': // 🗑️ Vehículo dado de baja
+      case 'inactivo': // Vehículo no operativo
+      case 'baja': // Vehículo dado de baja
         return Colors.red; // Rojo = no autorizado
 
-      default: // ❓ Estatus desconocido
+      default: // Estatus desconocido
         return Colors.grey; // Gris = desconocido
     }
   }
 
-  // 🆕 Método para obtener icono según estatus
+  // Método para obtener icono según estatus
   IconData _getIconoEstatus() {
-    // 📊 Extraer estatus y convertir a minúsculas para comparación
+    // Extraer estatus y convertir a minúsculas para comparación
     final estatus = widget.datosVehiculo?['estatus']?.toString().toLowerCase();
 
-    // 🎯 Asignar icono según estatus
+    // Asignar icono según estatus
     switch (estatus) {
-      case 'activo': // ✅ Vehículo operativo
+      case 'activo': // Vehículo operativo
         return Icons.check_circle; // Círculo con check
-      case 'taller': // 🛠️ Vehículo en mantenimiento
+      case 'taller': // Vehículo en mantenimiento
         return Icons.build; // Herramienta/martillo
-      case 'inactivo': // ❌ Vehículo no operativo
+      case 'inactivo': // Vehículo no operativo
         return Icons.cancel; // Círculo con X
-      case 'baja': // 🗑️ Vehículo dado de baja
+      case 'baja': //  Vehículo dado de baja
         return Icons.block; // Círculo con bloqueo
-      default: // ❓ Estatus desconocido
+      default: // Estatus desconocido
         return Icons.help_outline; // Signo de interrogación
     }
   }
@@ -232,30 +227,27 @@ class _InfoVehicState extends State<InfoVehic> {
   // =============================================================================
   // MÉTODO AUXILIAR: Obtener mensaje de autorización según estatus
   // =============================================================================
-  // Función: Generar mensaje informativo sobre la autorización del vehículo
-  // Retorna: String con mensaje claro para el usuario
-  // Lógica: Switch case con estatus en minúsculas
-  // =============================================================================
+
   String _getMensajeEstatus() {
-    // 📊 Extraer estatus y convertir a minúsculas para comparación
+    // Extraer estatus y convertir a minúsculas para comparación
     final estatus = widget.datosVehiculo?['estatus']?.toString().toLowerCase();
 
-    // 📝 Asignar mensaje según estatus
+    // Asignar mensaje según estatus
     switch (estatus) {
-      case 'activo': // ✅ Vehículo operativo
+      case 'activo': // Vehículo operativo
         return 'Vehículo AUTORIZADO para realizar carga'; // Mensaje positivo
-      case 'taller': // 🛠️ Vehículo en mantenimiento (pero autorizado)
+      case 'taller': // Vehículo en mantenimiento (pero autorizado)
         return 'Vehículo en taller - AUTORIZADO para carga'; // Mensaje informativo
-      case 'inactivo': // ❌ Vehículo no operativo
+      case 'inactivo': // Vehículo no operativo
         return 'Vehículo INACTIVO - NO AUTORIZADO para carga'; // Mensaje negativo
-      case 'baja': // 🗑️ Vehículo dado de baja
+      case 'baja': // Vehículo dado de baja
         return 'Vehículo de BAJA - NO AUTORIZADO para carga'; // Mensaje negativo
-      default: // ❓ Estatus desconocido
+      default: // Estatus desconocido
         return 'Estatus desconocido - Contactar administrador'; // Mensaje de ayuda
     }
   }
 
-  // 🆕 Método para verificar si está autorizado
+  // Método para verificar si está autorizado
   bool _estaAutorizado() {
     final estatus = widget.datosVehiculo?['estatus']?.toString().toLowerCase();
     return estatus == 'activo' || estatus == 'taller';
@@ -264,55 +256,41 @@ class _InfoVehicState extends State<InfoVehic> {
   // =============================================================================
   // MÉTODO PARA VERIFICAR CAMPO 'REALIZADO' - Candado de carga ordinaria
   // =============================================================================
-  // Función: Verifica si el vehículo ya realizó carga ordinaria hoy
-  // API: /revisar-cargas/{numero_serie}
-  // Campo: 'realizado' (true = ya cargó, false = no ha cargado)
-  // Acción: Muestra diálogo si ya cargó, continúa normal si no
-  // =============================================================================
+
   Future<void> _verificarCargaYContinuar(BuildContext context) async {
     try {
-      print(
-        '🔍 Verificando campo realizado y autorizado para vehículo: ${widget.numeroSerie}',
-      );
-
-      // 🌐 Llamar a API para verificar campos 'realizado' y 'autorizado'
+      // Llamar a API para verificar campos 'realizado' y 'autorizado'
       final resultado = await LaravelApiService.buscarVehiculo(
         widget.numeroSerie,
       );
 
-      print('🔍 DEBUG: Respuesta API: $resultado');
-
-      // 🚨 CORRECCIÓN: Los campos están anidados en 'vehiculo'
+      // CORRECCIÓN: Los campos están anidados en 'vehiculo'
       final realizado = resultado['vehiculo']?['realizado'] ?? false;
       final autorizado = resultado['vehiculo']?['autorizado'] ?? false;
 
-      print('🔍 DEBUG: Campo realizado: $realizado');
-      print('🔍 DEBUG: Campo autorizado: $autorizado');
-
       if (resultado['success'] == true) {
-        // 🎯 Validación combinada para cargas ordinarias
+        // Validación combinada para cargas ordinarias
         if (widget.tipoCargaPreseleccionado == 'ordinaria') {
           if (realizado == true) {
-            // 🔴 Caso 1: Ya realizó carga hoy
+            // Caso 1: Ya realizó carga hoy
             _mostrarDialogoCargaBloqueada(context);
           } else if (autorizado == false) {
-            // 🔴 Caso 2: Hoy no es día autorizado
+            // Caso 2: Hoy no es día autorizado
             _mostrarDialogoDiaNoAutorizado(context);
           } else {
-            // 🟢 Caso 3: Puede cargar
+            // Caso 3: Puede cargar
             _navegarACargaNormal(context);
           }
         } else {
-          // 🟢 Para extraordinarias y bidones, continuar normal
+          // Para extraordinarias y bidones, continuar normal
           _navegarACargaNormal(context);
         }
       } else {
-        // 🔄 Si hay error en API, continuar por seguridad
+        // Si hay error en API, continuar por seguridad
         _navegarACargaNormal(context);
       }
     } catch (e) {
-      print('🔍 DEBUG: Error en verificación: $e');
-      // 🔄 Error en verificación - Continuar por seguridad
+      // Error en verificación - Continuar por seguridad
       _navegarACargaNormal(context);
     }
   }
@@ -320,10 +298,7 @@ class _InfoVehicState extends State<InfoVehic> {
   // =============================================================================
   // DIÁLOGO DE DÍA NO AUTORIZADO - Ventana emergente
   // =============================================================================
-  // Función: Muestra diálogo cuando hoy no es día de carga autorizado
-  // UI: AlertDialog con icono, mensaje y botón para regresar
-  // Acción: Permite regresar a página de inicio
-  // =============================================================================
+
   void _mostrarDialogoDiaNoAutorizado(BuildContext context) {
     showDialog(
       context: context,
@@ -341,7 +316,7 @@ class _InfoVehicState extends State<InfoVehic> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🎯 Icono de calendario
+              // Icono de calendario
               Container(
                 width: 80,
                 height: 80,
@@ -358,7 +333,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 20),
 
-              // 📋 Título
+              // Título
               const Text(
                 'Día No Autorizado',
                 textAlign: TextAlign.center,
@@ -371,7 +346,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 16),
 
-              // 📝 Mensaje principal
+              // Mensaje principal
               const Text(
                 'Hoy no es día de carga para este vehículo.',
                 textAlign: TextAlign.center,
@@ -380,7 +355,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 8),
 
-              // 📝 Mensaje secundario
+              // Mensaje secundario
               Text(
                 'El vehículo no está autorizado para cargar ordinaria hoy.',
                 textAlign: TextAlign.center,
@@ -389,14 +364,14 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 24),
 
-              // 🚀 Botón de regreso
+              // Botón de regreso
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop(); // Cerrar diálogo
 
-                    // 🏠 Volver a página de inicio
+                    // Volver a página de inicio
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => PagInicio()),
@@ -426,12 +401,9 @@ class _InfoVehicState extends State<InfoVehic> {
   }
 
   // =============================================================================
-  // DIÁLOGO DE CARGA BLOQUEADA - Ventana emergente
+  // DIÁLOGO DE CARGA BLOQUEADA - Ventana emergente por carga repetida
   // =============================================================================
-  // Función: Muestra diálogo cuando el vehículo ya cargó hoy
-  // UI: AlertDialog con icono, mensaje y botón para regresar
-  // Acción: Permite regresar a página de inicio
-  // =============================================================================
+
   void _mostrarDialogoCargaBloqueada(BuildContext context) {
     showDialog(
       context: context,
@@ -449,7 +421,7 @@ class _InfoVehicState extends State<InfoVehic> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🎯 Icono de bloqueo
+              // Icono de bloqueo
               Container(
                 width: 80,
                 height: 80,
@@ -466,7 +438,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 20),
 
-              // 📋 Título
+              // Título
               const Text(
                 'Carga Ordinaria Bloqueada',
                 textAlign: TextAlign.center,
@@ -479,7 +451,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 16),
 
-              // 📝 Mensaje principal
+              // Mensaje principal
               const Text(
                 'Este vehículo ya tiene registrada una carga ordinaria hoy.',
                 textAlign: TextAlign.center,
@@ -488,7 +460,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 8),
 
-              // 📝 Mensaje secundario
+              // Mensaje secundario
               Text(
                 'No se puede realizar otra carga ordinaria el mismo día.',
                 textAlign: TextAlign.center,
@@ -497,14 +469,14 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 24),
 
-              // 🚀 Botón de regreso
+              // Botón de regreso
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop(); // Cerrar diálogo
 
-                    // 🏠 Volver a página de inicio
+                    // Volver a página de inicio
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => PagInicio()),
@@ -537,14 +509,6 @@ class _InfoVehicState extends State<InfoVehic> {
   // MÉTODO DE NAVEGACIÓN A CARGA - Flujo normal (para candado)
   // =============================================================================
   void _navegarACargaNormal(BuildContext context) {
-    print('DEBUG: Navegando a página de cargas');
-    print(
-      'DEBUG: InfoVehic - widget.nombreConductorValidado = ${widget.nombreConductorValidado}',
-    );
-    print(
-      'DEBUG: InfoVehic - widget.tipoCargaPreseleccionado = ${widget.tipoCargaPreseleccionado}',
-    );
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -586,7 +550,6 @@ class _InfoVehicState extends State<InfoVehic> {
             Center(
               child: Column(
                 children: [
-                  // 🗑️ Eliminado Container circular - ahora solo la estrella
                   Image.asset(
                     'assets/images/Estrella.png',
                     width: 120,
@@ -620,7 +583,6 @@ class _InfoVehicState extends State<InfoVehic> {
                 ],
               ),
             ),
-            // 🗑️ Eliminada validación de día autorizado - siempre mostrar verde si está autorizado
             Card(
               color:
                   _getColorEstatus(), // Solo depende del estatus del vehículo
@@ -632,7 +594,7 @@ class _InfoVehicState extends State<InfoVehic> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    // 🆕 Icono centrado
+                    // Icono centrado
                     Center(
                       child: Icon(
                         _getIconoEstatus(),
@@ -641,7 +603,7 @@ class _InfoVehicState extends State<InfoVehic> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // 🆕 Título centrado
+                    // Título centrado
                     const Text(
                       'Estatus del vehículo',
                       textAlign: TextAlign.center,
@@ -652,7 +614,7 @@ class _InfoVehicState extends State<InfoVehic> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    // 🆕 Estatus centrado
+                    // Estatus centrado
                     Text(
                       _formatearDato(
                         widget.datosVehiculo?['estatus'],
@@ -661,7 +623,7 @@ class _InfoVehicState extends State<InfoVehic> {
                       style: const TextStyle(fontSize: 16, color: Colors.white),
                     ),
                     const SizedBox(height: 10),
-                    // 🆕 Mensaje centrado
+                    // Mensaje centrado
                     Text(
                       _getMensajeEstatus(),
                       textAlign: TextAlign.center,
@@ -739,30 +701,12 @@ class _InfoVehicState extends State<InfoVehic> {
                       title: const Text('Tipo de combustible:'),
                       subtitle: Text(
                         _formatearDato(
-                          // 🆕 Para bidones usar 'combustible', para otros usar 'tipo_combustible'
+                          // Para bidones usar 'combustible', para otros usar 'tipo_combustible'
                           (() {
-                            print(
-                              '🔍 DEBUG: datosVehiculo completo: ${widget.datosVehiculo}',
-                            );
-                            print(
-                              '🔍 DEBUG: campo combustible: ${widget.datosVehiculo?['combustible']}',
-                            );
-                            print(
-                              '🔍 DEBUG: campo tipo_combustible: ${widget.datosVehiculo?['tipo_combustible']}',
-                            );
-                            print(
-                              '🔍 DEBUG: keys disponibles: ${widget.datosVehiculo?.keys.toList()}',
-                            );
-
                             final combustible =
                                 widget.datosVehiculo?['combustible'];
                             final tipoCombustible =
                                 widget.datosVehiculo?['tipo_combustible'];
-
-                            print('🔍 DEBUG: Usando combustible: $combustible');
-                            print(
-                              '🔍 DEBUG: Usando tipo_combustible: $tipoCombustible',
-                            );
 
                             return combustible ?? tipoCombustible;
                           })(),
@@ -782,19 +726,19 @@ class _InfoVehicState extends State<InfoVehic> {
               child: ElevatedButton(
                 onPressed: _estaAutorizado()
                     ? () async {
-                        // 🎯 Para cargas ordinarias, verificar campo 'realizado'
-                        // 🎯 Para cargas extraordinarias, verificar aquí si hay cargas
+                        // Para cargas ordinarias, verificar campo 'realizado'
+                        // Para cargas extraordinarias, verificar aquí si hay cargas
                         final tipoCarga = widget.tipoCargaPreseleccionado
                             ?.toLowerCase();
                         if (tipoCarga == 'ordinaria') {
                           await _verificarCargaYContinuar(context);
                         } else if (tipoCarga == 'extraordinaria') {
-                          // � VALIDAR CARGAS EXTRAORDINARIAS AQUÍ
+                          // VALIDAR CARGAS EXTRAORDINARIAS AQUÍ
                           await _verificarCargasExtraordinariasYContinuar(
                             context,
                           );
                         } else {
-                          // 🎯 Para bidones, ir directamente
+                          // Para bidones, ir directamente
                           _navegarACarga(context, tipoCarga ?? 'bidones');
                         }
                       }
@@ -814,7 +758,7 @@ class _InfoVehicState extends State<InfoVehic> {
                   ),
                 ),
                 child: Text(
-                  // 🗑️ Mensaje simple según autorización
+                  // Mensaje simple según autorización
                   !_estaAutorizado() ? 'Vehículo no autorizado' : 'Continuar',
                   style: const TextStyle(fontSize: 18),
                 ),
@@ -830,33 +774,23 @@ class _InfoVehicState extends State<InfoVehic> {
   // =============================================================================
   // MÉTODO PARA VERIFICAR CARGAS EXTRAORDINARIAS - Flujo optimizado
   // =============================================================================
-  // Función: Verifica si hay cargas extraordinarias asignadas usando datos disponibles
-  // Acción: Muestra diálogo si no hay cargas, continúa normal si hay
-  // =============================================================================
+
   Future<void> _verificarCargasExtraordinariasYContinuar(
     BuildContext context,
   ) async {
     try {
-      print(' Verificando cargas extraordinarias para: ${widget.numeroSerie}');
-
       //  Usar las cargas que ya tenemos disponibles en lugar de llamar a la API nuevamente
       final cargasDisponibles = widget.cargasDelVehiculo ?? [];
 
       //  Verificar si hay cargas extraordinarias
       if (cargasDisponibles.isEmpty) {
         //  No hay cargas extraordinarias - Mostrar diálogo
-        print(' No hay cargas extraordinarias asignadas');
         _mostrarDialogoSinExtraordinarias(context);
       } else {
         //  Hay cargas extraordinarias - Continuar normal
-        print(
-          ' Cargas extraordinarias encontradas: ${cargasDisponibles.length}',
-        );
         _navegarACarga(context, 'extraordinaria');
       }
     } catch (e) {
-      print(' Error al verificar cargas extraordinarias: $e');
-
       //  Error en verificación - Mostrar diálogo por seguridad
       _mostrarDialogoSinExtraordinarias(context);
     }
@@ -866,23 +800,19 @@ class _InfoVehicState extends State<InfoVehic> {
   // MÉTODO PARA NAVEGAR A CARGA CON TIPO SELECCIONADO
   // =============================================================================
 
-  // 🆕 Método para navegar a Carga con tipo seleccionado
+  // Método para navegar a Carga con tipo seleccionado
   bool _isProcessing = false; // 🆕 Bandera para evitar doble ejecución
 
   void _navegarACarga(BuildContext context, String tipoCarga) async {
-    // 🆕 Evitar doble ejecución
+    // Evitar doble ejecución
     if (_isProcessing) {
-      print('🔍 DEBUG: Ya se está procesando, evitando doble ejecución');
       return;
     }
 
     _isProcessing = true;
-    print(' Navegando a carga de tipo: $tipoCarga');
 
     if (tipoCarga == 'extraordinaria') {
       // Para cargas extraordinarias, usar los datos ya disponibles
-      print(' Navegando a página de carga extraordinaria');
-
       try {
         // Usar las cargas que ya tenemos disponibles
         final cargasDisponibles = widget.cargasDelVehiculo ?? [];
@@ -894,17 +824,12 @@ class _InfoVehicState extends State<InfoVehic> {
               primerElemento['id_carga_extraordinaria']?.toString() ??
               primerElemento['id']?.toString() ??
               '';
-
           // Extraer el ID correcto del vehículo (no de la carga)
           final idVehiculoCorrecto =
               primerElemento['id_vehiculo']?.toString() ??
               widget.datosVehiculo?['id']?.toString() ??
               widget.datosVehiculo?['id_vehiculo']?.toString() ??
               '';
-
-          print(' ID de carga asignada: $idCargaAsignada');
-          print(' ID del vehículo (correcto): $idVehiculoCorrecto');
-          print(' Datos del vehiculo: ${widget.datosVehiculo}');
 
           // Navegación con el ID correcto
           Navigator.push(
@@ -929,27 +854,19 @@ class _InfoVehicState extends State<InfoVehic> {
             ),
           );
         } else {
-          print(' No hay cargas extraordinarias disponibles');
           _mostrarDialogoSinExtraordinarias(context);
         }
       } catch (e) {
-        print(' Error al navegar a carga extraordinaria: $e');
         _mostrarDialogoErrorGeneral(context, e.toString());
       }
     } else if (tipoCarga == 'bidones') {
       // Para cargas de bidones, obtener datos específicos
       try {
-        print(' Obteniendo cargas de bidones para ${widget.numeroSerie}');
-        print(' DEBUG: datosVehiculo completos: ${widget.datosVehiculo}');
-        print('🔍 Obteniendo cargas de bidones para ${widget.numeroSerie}');
-        print('🔍 DEBUG: datosVehiculo completos: ${widget.datosVehiculo}');
-
         final datosBidones = await LaravelApiService.getCargasBidones(
           widget.numeroSerie,
         );
-        print('🔍 DEBUG: Respuesta de bidones: $datosBidones');
 
-        // 🆕 VERIFICAR SI HAY BIDONES O NO
+        // VERIFICAR SI HAY BIDONES O NO
         if (datosBidones['success'] == false &&
             datosBidones['sin_bidones'] == true) {
           // 📍 VEHÍCULO EXISTE PERO NO TIENE BIDONES
@@ -957,36 +874,29 @@ class _InfoVehicState extends State<InfoVehic> {
           return;
         }
 
-        // 🆕 Extraer litros del campo 'litros' de la respuesta
+        // Extraer litros del campo 'litros' de la respuesta
         final litrosAutorizados = datosBidones['litros']?.toString() ?? '0';
-        print('✅ Litros autorizados para bidones: $litrosAutorizados');
 
-        // 🆕 Extraer ID del vehículo de los datos base
+        // Extraer ID del vehículo de los datos base
         final idVehiculo =
             widget.datosVehiculo?['id']?.toString() ??
             widget.datosVehiculo?['id_vehiculo']?.toString() ??
             widget.datosVehiculo?['vehiculo_id']?.toString() ??
             'NO_ENCONTRADO';
 
-        // 🆕 Extraer ID de carga asignada (usar método específico para bidones)
+        // Extraer ID de carga asignada (usar método específico para bidones)
         final idCargaAsignada = _getIdCargaBidon(
           datosBidones,
-        ); // 🆕 Método específico para bidones
-
-        print('🔍 DEBUG: ID del vehículo encontrado: $idVehiculo');
-        print(
-          '🔍 DEBUG: ID de carga asignada (método ordinario): $idCargaAsignada',
-        );
-
-        // 🆕 Crear datos modificados para la página de carga
+        ); // Método específico para bidones
+        // Crear datos modificados para la página de carga
         final datosModificados = {
           ...widget.datosVehiculo ?? {},
           'litros_autorizados_bidones':
-              litrosAutorizados, // 🆕 Campo especial para bidones
-          'id_vehiculo_real': idVehiculo, // 🆕 Guardar ID real para el POST
+              litrosAutorizados, // Campo especial para bidones
+          'id_vehiculo_real': idVehiculo, // Guardar ID real para el POST
         };
 
-        // 🆕 Crear lista de cargas para bidones (estructura similar a ordinarias)
+        // Crear lista de cargas para bidones (estructura similar a ordinarias)
         final cargasBidones = [
           {
             'id':
@@ -1000,9 +910,7 @@ class _InfoVehicState extends State<InfoVehic> {
           },
         ];
 
-        print('🔍 DEBUG: cargasBidones creadas: $cargasBidones');
-
-        // 🆕 Navegar a Carga con datos de bidones
+        // Navegar a Carga con datos de bidones
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1012,23 +920,20 @@ class _InfoVehicState extends State<InfoVehic> {
               numeroSerie:
                   widget.datosVehiculo?['num_serie'] ??
                   widget.numeroSerie, // Usar número completo del vehículo
-              // 🆕 Para bidones usar 'combustible', para otros usar 'tipo_combustible'
+              // Para bidones usar 'combustible', para otros usar 'tipo_combustible'
               tipoCombustible:
                   widget.datosVehiculo?['combustible'] ??
                   widget.datosVehiculo?['tipo_combustible'],
               tipoCargaPreseleccionado: tipoCarga,
-              idCargaAsignada: idCargaAsignada, // 🆕 Usar ID de la tabla base
-              idVehiculoCorrecto:
-                  idVehiculo, // 🆕 Pasar ID correcto del vehículo
+              idCargaAsignada: idCargaAsignada, // Usar ID de la tabla base
+              idVehiculoCorrecto: idVehiculo, // Pasar ID correcto del vehículo
               nombreConductorValidado: widget
                   .nombreConductorValidado, // Pasar nombre del conductor validado
             ),
           ),
         );
       } catch (e) {
-        print('❌ Error al obtener cargas de bidones: $e');
-
-        // 🆕 CORRECCIÓN: Validar context antes de usar ScaffoldMessenger
+        // CORRECCIÓN: Validar context antes de usar ScaffoldMessenger
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1040,27 +945,26 @@ class _InfoVehicState extends State<InfoVehic> {
         }
       }
     } else {
-      // ✅ Para cargas ordinarias, usar flujo normal
-      print('🔍 Usando flujo de carga ordinaria');
+      // Para cargas ordinarias, usar flujo normal
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => Carga(
-            datosVehiculo: widget.datosVehiculo, // 📦 Pasar datos del vehículo
+            datosVehiculo: widget.datosVehiculo, // Pasar datos del vehículo
             cargasDelVehiculo: widget
-                .cargasDelVehiculo, // 📦 Pasar cargas del vehículo (tabla ordinaria)
+                .cargasDelVehiculo, // Pasar cargas del vehículo (tabla ordinaria)
             numeroSerie:
                 widget.datosVehiculo?['num_serie'] ??
                 widget
-                    .numeroSerie, // Usar número completo del vehículo // 🆕 Pasar número de serie
+                    .numeroSerie, // Usar número completo del vehículo // Pasar número de serie
             tipoCombustible:
                 widget.datosVehiculo?['combustible'] ??
                 widget
-                    .datosVehiculo?['tipo_combustible'], // 🆕 Pasar tipo de combustible
+                    .datosVehiculo?['tipo_combustible'], // Pasar tipo de combustible
             tipoCargaPreseleccionado:
-                tipoCarga, // 🆕 Pasar tipo de carga seleccionado
+                tipoCarga, // Pasar tipo de carga seleccionado
             idCargaAsignada:
-                _getIdCargaAsignada(), // 🆕 Pasar ID extraído de /api/cargas
+                _getIdCargaAsignada(), // Pasar ID extraído de /api/cargas
           ),
         ),
       );
@@ -1068,7 +972,7 @@ class _InfoVehicState extends State<InfoVehic> {
   }
 
   // =============================================================================
-  // 🆕 MÉTODO PARA MOSTRAR DIÁLOGO DE VEHÍCULO SIN BIDONES
+  // MÉTODO PARA MOSTRAR DIÁLOGO DE VEHÍCULO SIN BIDONES
   // =============================================================================
   void _mostrarDialogoVehiculoSinBidones(BuildContext context) {
     showDialog(
@@ -1087,7 +991,7 @@ class _InfoVehicState extends State<InfoVehic> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🎯 Icono de bidones
+              // Icono de bidones
               Container(
                 width: 80,
                 height: 80,
@@ -1104,7 +1008,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 20),
 
-              // 📋 Título
+              // Título
               const Text(
                 'Vehículo Sin Bidones',
                 textAlign: TextAlign.center,
@@ -1117,7 +1021,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 16),
 
-              // 📝 Mensaje principal
+              // Mensaje principal
               const Text(
                 'Este vehículo no tiene bidones asignados.',
                 textAlign: TextAlign.center,
@@ -1126,7 +1030,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 8),
 
-              // 📝 Mensaje secundario con número de serie
+              // Mensaje secundario con número de serie
               Text(
                 'Número de serie: ${widget.numeroSerie}\n\nEl vehículo existe en el sistema pero actualmente no tiene cargas de bidones pendientes.\n\nPuede continuar con cargas ordinarias o extraordinarias.',
                 textAlign: TextAlign.center,
@@ -1135,14 +1039,14 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 24),
 
-              // 🚀 Botón de regreso
+              // Botón de regreso
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop(); // Cerrar diálogo
 
-                    // 🏠 Volver a página de inicio
+                    // Volver a página de inicio
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => PagInicio()),
@@ -1172,7 +1076,7 @@ class _InfoVehicState extends State<InfoVehic> {
   }
 
   // =============================================================================
-  // 🆕 MÉTODO PARA MOSTRAR DIÁLOGO DE ERROR GENERAL
+  // MÉTODO PARA MOSTRAR DIÁLOGO DE ERROR GENERAL
   // =============================================================================
   void _mostrarDialogoErrorGeneral(BuildContext context, String errorMessage) {
     showDialog(
@@ -1191,7 +1095,7 @@ class _InfoVehicState extends State<InfoVehic> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🎯 Icono de error
+              // Icono de error
               Container(
                 width: 80,
                 height: 80,
@@ -1204,7 +1108,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 20),
 
-              // 📋 Título
+              // Título
               const Text(
                 'Error Inesperado',
                 textAlign: TextAlign.center,
@@ -1217,7 +1121,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 16),
 
-              // 📝 Mensaje de error
+              // Mensaje de error
               Text(
                 'Ocurrió un error al procesar la solicitud:\n\n$errorMessage',
                 textAlign: TextAlign.center,
@@ -1226,7 +1130,7 @@ class _InfoVehicState extends State<InfoVehic> {
 
               const SizedBox(height: 24),
 
-              // 🚀 Botón de regreso
+              // Botón de regreso
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

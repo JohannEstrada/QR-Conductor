@@ -931,9 +931,7 @@ class _PagInicioState extends State<PagInicio> {
               ),
             ),
 
-            const SizedBox(
-              height: 8,
-            ), // Espacio reducido entre botones de carga y cerrar sesión
+            const SizedBox(height: 8),
             // Botón de cerrar sesión en la parte inferior
             Container(
               width: double.infinity, // Ocupa todo el ancho disponible
@@ -1055,7 +1053,7 @@ class _PagInicioState extends State<PagInicio> {
                   switch (tipoCarga) {
                     case 'extraordinaria':
 
-                      // 🆕 DEBUG: Mostrar URL exacta que se está llamando
+                      // DEBUG: Mostrar URL exacta que se está llamando
                       final url =
                           'https://combustibles.sspmichoacan.com/cargas-extraordinarias/$numSerie';
                       print('🔍 DEBUG: URL de API extraordinaria: $url');
