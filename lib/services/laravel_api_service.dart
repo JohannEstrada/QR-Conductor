@@ -703,23 +703,8 @@ class LaravelApiService {
         'Accept': 'application/json', // 📄 Aceptar respuesta JSON
       });
 
-      // ========================================================================
-      // 📦 AGREGAR CAMPOS DEL FORMULARIO: Aquí se agregan todos los datos al POST
-      // ========================================================================
-      // ESTA ES LA PARTE CRÍTICA - Aquí agregamos el campo nombre_conductor al POST
-      // ========================================================================
-      // 🚨 CRÍTICO: Problema de datos - Backend guarda 8 dígitos pero necesita 17
-      // ========================================================================
-      print('🚨 PROBLEMA IDENTIFICADO:');
-      print('   Backend guarda: 8 dígitos en extraordinarias y bidones');
-      print('   Backend debería guardar: 17 dígitos completos');
-      print('   Solución: Modificar backend para guardar num_serie completo');
-      print('   Mientras tanto: Forzando uso de id_vehiculo correcto');
-      print('   Enviando num_serie completo desde Flutter: $numSerie');
-      print('');
-
-      // 🆕 LÓGICA PARA ODOMETRO: Enviar '0' para cargas de bidones como solicitó el usuario
-      final odometroParaEnviar = (tipoCarga == 'BIDON') ? '0' : odometro;
+      // LÓGICA PARA ODOMETRO: Enviar el odómetro real para todos los tipos de carga
+      final odometroParaEnviar = odometro;
 
       request.fields.addAll({
         'id_vehiculo': idVehiculo, // 🚗 ID del vehículo en la BD
@@ -907,6 +892,22 @@ class LaravelApiService {
         };
       } else {
         print(' Error al insertar carga: ${response.statusCode}');
+
+        // Para errores 422, extraer el mensaje específico del body
+        if (response.statusCode == 422) {
+          try {
+            final responseData = jsonDecode(response.body);
+            final errorMessage =
+                responseData['message'] ?? 'Error de validación';
+            return {'success': false, 'message': errorMessage};
+          } catch (e) {
+            return {
+              'success': false,
+              'message': 'Error de validación de datos',
+            };
+          }
+        }
+
         return {'success': false, 'message': 'Error al registrar la carga'};
       }
     } catch (e) {

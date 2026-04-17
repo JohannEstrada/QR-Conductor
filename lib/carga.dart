@@ -1364,8 +1364,8 @@ class _CargaState extends State<Carga> {
           '🔍 DEBUG: nombre_conductor: ${_personaQueCargaController.text.trim()}',
         ); // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - ESTE ES EL CAMPO CLAVE
         print(
-          'DEBUG: odometro: ${(_tipoCarga == 'bidones' || _tipoCarga == 'BIDON') ? '0' : _kilometrajeController.text.trim()}',
-        ); // KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO (0 para BIDONES)
+          'DEBUG: odometro: ${_kilometrajeController.text.trim()}',
+        ); // KILOMETRAJE DEL VEHÍCULO - VALOR REAL PARA TODOS
         print(
           '🔍 DEBUG: widget.datosVehiculo: ${widget.datosVehiculo}',
         ); // Datos completos del vehículo
@@ -1422,10 +1422,8 @@ class _CargaState extends State<Carga> {
           imagenTicket: _imagenBase64, // Imagen del ticket en formato base64
           nombre_conductor: _personaQueCargaController.text
               .trim(), // 🆕 NOMBRE DE LA PERSONA QUE REALIZA LA CARGA - CAMPO CLAVE
-          odometro: (_tipoCarga == 'bidones' || _tipoCarga == 'BIDON')
-              ? '0'
-              : _kilometrajeController.text
-                    .trim(), // KILOMETRAJE DEL VEHÍCULO - NUEVO CAMPO (0 para BIDONES)
+          odometro: _kilometrajeController.text
+              .trim(), // KILOMETRAJE DEL VEHÍCULO - VALOR REAL PARA TODOS
         );
 
         if (result['success']) {
@@ -1447,12 +1445,21 @@ class _CargaState extends State<Carga> {
                 false, // Eliminar todas las rutas anteriores
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('❌ Error: ${result['message']}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          // Verificar si es un error de odómetro
+          final errorMessage = result['message']?.toString() ?? '';
+          if (errorMessage.contains('odómetro') &&
+              errorMessage.contains('mayor')) {
+            // Es un error de odómetro, mostrar diálogo específico
+            _mostrarDialogoErrorOdometro(context, errorMessage);
+          } else {
+            // Es otro tipo de error, mostrar SnackBar normal
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('❌ Error: ${result['message']}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1470,5 +1477,108 @@ class _CargaState extends State<Carga> {
         ),
       );
     }
+  }
+
+  // =============================================================================
+  // MÉTODO PARA MOSTRAR DIÁLOGO DE ERROR DE ODÓMETRO
+  // =============================================================================
+  void _mostrarDialogoErrorOdometro(BuildContext context, String mensaje) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Evitar cerrar tocando fuera
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icono de error
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.speed, color: Colors.red, size: 40),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Título
+                const Text(
+                  'Error en el Odómetro',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0A2E5C),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Mensaje de error
+                Text(
+                  mensaje,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Instrucciones
+                const Text(
+                  'Por favor, ingresa un valor de odómetro mayor al registro anterior y vuelve a intentar.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                    height: 1.4,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Botón de regreso
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Cerrar diálogo
+                      // Limpiar el campo de kilometraje para que el usuario ingrese un nuevo valor
+                      _kilometrajeController.clear();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0A2E5C),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 3,
+                    ),
+                    child: const Text(
+                      'Corregir Odómetro',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
